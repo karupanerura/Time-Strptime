@@ -179,14 +179,15 @@ sub _gen_calc_epoch_src {
 
     # hour24&minute&second
     # year&day365 or year&month&day
+    my $timelocal_sub = "Time::Local::time@{[ $types_table->{offset} ? 'gm' : 'local' ]}";
     if ($types_table->{year} && $types_table->{month} && $types_table->{day}) {
         $src .= <<EOD;
-\$epoch += Time::Local::time@{[ $types_table->{offset} ? 'gm' : 'local' ]}(@{[ $types_table->{second} ? '$stash{second}' : 0 ]}, @{[ $types_table->{minute} ? '$stash{minute}' : 0 ]}, @{[ $types_table->{hour24} ? '$stash{hour24}' : 0 ]}, \$stash{day}, \$stash{month} - 1, \$stash{year} - 1900);
+\$epoch += ${timelocal_sub}(@{[ $types_table->{second} ? '$stash{second}' : 0 ]}, @{[ $types_table->{minute} ? '$stash{minute}' : 0 ]}, @{[ $types_table->{hour24} ? '$stash{hour24}' : 0 ]}, \$stash{day}, \$stash{month} - 1, \$stash{year} - 1900);
 EOD
     }
     elsif ($types_table->{year} && $types_table->{day365}) {
         $src .= <<EOD;
-\$epoch += Time::Local::time@{[ $types_table->{offset} ? 'gm' : 'local' ]}(@{[ $types_table->{second} ? '$stash{second}' : 0 ]}, @{[ $types_table->{minute} ? '$stash{minute}' : 0 ]}, @{[ $types_table->{hour24} ? '$stash{hour24}' : 0 ]}, 1, 0, \$stash{year} - 1900);
+\$epoch += ${timelocal_sub}(@{[ $types_table->{second} ? '$stash{second}' : 0 ]}, @{[ $types_table->{minute} ? '$stash{minute}' : 0 ]}, @{[ $types_table->{hour24} ? '$stash{hour24}' : 0 ]}, 1, 0, \$stash{year} - 1900);
 \$epoch += \$stash{day365} * 60 * 60 * 24;
 EOD
     }
