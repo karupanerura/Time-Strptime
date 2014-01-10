@@ -5,7 +5,7 @@ use utf8;
 
 use Carp ();
 use Time::Local ();
-use POSIX ();
+use POSIX qw/tzset/;
 
 our $VERSION = 0.01;
 
@@ -87,12 +87,6 @@ sub _compile_format {
     my $self = shift;
     my $format = $self->{format};
 
-    # generate anon package
-    my $parser_package;
-    $self->{_parser_package}{$format}->cleanup if $self->{_parser_package}{$format};
-    $parser_package = $self->{_parser_package}{$format}
-        ||= __PACKAGE__ . '::__ANON__::Parser' . (0+$self) . time . $$ . int rand . 0+{};
-
     # assemble format to regexp
     my @types;
     $format =~ s{%(.)}{$self->_assemble_format($1, \@types)}ge;
@@ -100,26 +94,7 @@ sub _compile_format {
 
     # generate base src
     my $parser_src = <<EOD;
-package $parser_package;
-use strict;
-use warnings;
-use utf8;
-
-use Carp ();
-use Time::Local ();
-use POSIX qw/tzset/;
-
-\*__TIME_STRPTIME_FORMAT_TO_EPOCH__ = @{[ $types_table{offset} ? 1 : 0 ]} ? \\\*Time::Local::timegm : \\\*Time::Local::timelocal;
-
 my (\$epoch, \@matches, \%%stash, \$register);
-
-sub cleanup {
-    undef \$epoch;
-    undef \@matches;
-    undef \%%stash;
-    undef \$register;
-}
-
 sub {
     if (\@matches = (\$_[0] =~ m{\\A$format\\z}o)) {
         \$epoch = 0;
@@ -202,12 +177,12 @@ EOD
     # year&day365 or year&month&day
     if ($types_table->{year} && $types_table->{month} && $types_table->{day}) {
         $src .= <<EOD;
-\$epoch += __TIME_STRPTIME_FORMAT_TO_EPOCH__(@{[ $types_table->{second} ? '$stash{second}' : 0 ]}, @{[ $types_table->{minute} ? '$stash{minute}' : 0 ]}, @{[ $types_table->{hour24} ? '$stash{hour24}' : 0 ]}, \$stash{day}, \$stash{month} - 1, \$stash{year} - 1900);
+\$epoch += Time::Local::time@{[ $types_table->{offset} ? 'gm' : 'local' ]}(@{[ $types_table->{second} ? '$stash{second}' : 0 ]}, @{[ $types_table->{minute} ? '$stash{minute}' : 0 ]}, @{[ $types_table->{hour24} ? '$stash{hour24}' : 0 ]}, \$stash{day}, \$stash{month} - 1, \$stash{year} - 1900);
 EOD
     }
     elsif ($types_table->{year} && $types_table->{day365}) {
         $src .= <<EOD;
-\$epoch += \$timelocal->(@{[ $types_table->{second} ? '$stash{second}' : 0 ]}, @{[ $types_table->{minute} ? '$stash{minute}' : 0 ]}, @{[ $types_table->{hour24} ? '$stash{hour24}' : 0 ]}, 1, 0, \$stash{year} - 1900);
+\$epoch += Time::Local::time@{[ $types_table->{offset} ? 'gm' : 'local' ]}(@{[ $types_table->{second} ? '$stash{second}' : 0 ]}, @{[ $types_table->{minute} ? '$stash{minute}' : 0 ]}, @{[ $types_table->{hour24} ? '$stash{hour24}' : 0 ]}, 1, 0, \$stash{year} - 1900);
 \$epoch += \$stash{day365} * 60 * 60 * 24;
 EOD
     }
@@ -224,15 +199,6 @@ EOD
     }
 
     return $src;
-}
-
-sub DESTROY {
-    my $self = shift;
-    if ($self->{_parser_package}) {
-        for my $format (keys %{ $self->{_parser_package} }) {
-            $self->{_parser_package}->{$format}->cleanup;
-        }
-    }
 }
 
 1;
