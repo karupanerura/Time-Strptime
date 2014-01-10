@@ -6,7 +6,7 @@ use 5.10.0;
 
 use Carp ();
 use Time::Local ();
-use POSIX qw/tzset/;
+use POSIX ();
 
 our $VERSION = 0.01;
 
@@ -60,13 +60,18 @@ sub new {
     my ($class, $format, $handler) = @_;
     $handler ||= +{};
 
-    return bless +{
+    my $self = bless +{
         format   => $format,
         _handler => +{
             %DEFAULT_HANDLER,
             %$handler,
         },
     } => $class;
+
+    # compile and cache
+    $self->_parser();
+
+    return $self;
 }
 
 sub parse {
@@ -82,52 +87,43 @@ sub _parser {
 sub _compile_format {
     my $self = shift;
     my $format = $self->{format};
-    warn $format;
 
     my @types;
     $format =~ s{%(.)}{$self->_assemble_format($1, \@types)}ge;
-    use Data::Dumper;
-    warn Dumper +{
-        format => $format,
-        types  => \@types,
-    };
 
+    my %types_table = map { $_ => 1 } @types;
     my $parser_src = <<EOD;
+package @{[ __PACKAGE__ . '::__ANON__::Parser' . time . $$ . int(rand()) . int(+{}) ]};
+use Carp ();
+use Time::Local ();
+use POSIX qw/tzset/;
+
+\*__TIME_STRPTIME_FORMAT_TO_EPOCH__ = @{[ $types_table{offset} ? 1 : 0 ]} ? \\\*Time::Local::timegm : \\\*Time::Local::timelocal;
+my (\@matches, \%%stash);
 sub {
-    my \$text = shift;
-    if (my \@matches = \$text =~ m{$format}) {
-        my \%%stash;
+    if (\@matches = (\$_[0] =~ m{\\A$format\\z}o)) {
+        local \$_;
+        my \$epoch = 0;
         \%s;
     }
     else {
-        Carp::croak "cannot parse datetime. text: \$text, format: \%s";
+        Carp::croak "cannot parse datetime. text: \$_[0], format: \%s";
     }
-}
+};
 EOD
 
     my $formatter_src = '';
     for my $type (@types) {
         $formatter_src .= sprintf <<EOD, $self->_stash_src($type);
-{
-    local \$_ = shift \@matches;
-    tr/ //d; # trim
-    \%s
-}
+\$_ = shift \@matches;
+%s
 EOD
     }
 
     {
-        my %types_table = map { $_ => 1 } @types;
-
         # epoch
         $formatter_src .= <<EOD if $types_table{epoch};
 return \$stash{epoch};
-EOD
-
-        # start
-        $formatter_src .= <<EOD;
-my \$epoch     = 0;
-my \$timelocal = \\\&Time::Local::timelocal;
 EOD
         {
             # timezone
@@ -138,34 +134,34 @@ EOD
 
             # offset
             $formatter_src .= <<EOD if $types_table{offset};
-\$epoch     += \$stash{offset} * 60 * 60;
-\$timelocal  = \&Time::Local::timegm;
+\$epoch     += \$stash{offset} * 60 * 60 / 100;
 EOD
 
             # hour24&minute&second
             # year&day365 or year&month&day
-            $formatter_src .= <<EOD;
-{
-    my \$second = \$stash{second} || 0;
-    my \$minute = \$stash{minute} || 0;
-    my \$hour   = \$stash{hour24} || 0;
-    if (exists \$stash{year} && exists \$stash{day365}) {
-        \$epoch += \$timelocal->(\$second, \$minute, \$hour, 1, 0, \$stash{year} - 1900);
-        \$epoch += \$stash{day365} * 60 * 60 * 24;
-    }
-    elsif (exists \$stash{year} && exists \$stash{month} && exists \$stash{day}) {
-        \$epoch += \$timelocal->(\$second, \$minute, \$hour, \$stash{day}, \$stash{month} - 1, \$stash{year} - 1900);
-    }
-    else {
-        require Data::Dumper;
-        local \$Data::Dumper::Terse    = 1;
-        local \$Data::Dumper::Indent   = 0;
-        local \$Data::Dumper::SortKeys = 1;
-        die 'unknown case. stash: '.Data::Dumper->Dump([\\\%stash]);
-    }
-}
+            if ($types_table{year} && $types_table{month} && $types_table{day}) {
+                $formatter_src .= <<EOD;
+\$epoch += __TIME_STRPTIME_FORMAT_TO_EPOCH__(@{[ $types_table{second} ? '$stash{second}' : 0 ]}, @{[ $types_table{minute} ? '$stash{minute}' : 0 ]}, @{[ $types_table{hour24} ? '$stash{hour24}' : 0 ]}, \$stash{day}, \$stash{month} - 1, \$stash{year} - 1900);
 EOD
-}
+            }
+            elsif ($types_table{year} && $types_table{day365}) {
+                $formatter_src .= <<EOD;
+\$epoch += \$timelocal->(@{[ $types_table{second} ? '$stash{second}' : 0 ]}, @{[ $types_table{minute} ? '$stash{minute}' : 0 ]}, @{[ $types_table{hour24} ? '$stash{hour24}' : 0 ]}, 1, 0, \$stash{year} - 1900);
+\$epoch += \$stash{day365} * 60 * 60 * 24;
+EOD
+            }
+            else {
+                require Data::Dumper;
+
+                no warnings 'once';
+                local $Data::Dumper::Terse    = 1;
+                local $Data::Dumper::Indent   = 0;
+                local $Data::Dumper::SortKeys = 1;
+                use warnings 'once';
+
+                die 'unknown case. types: '.Data::Dumper->Dump([\@types]);
+            }
+        }
         # finish
         $formatter_src .= <<EOD;
 return \$epoch;
@@ -173,7 +169,7 @@ EOD
     }
 
     my $combined_src = sprintf $parser_src, $formatter_src, $self->{format};
-    warn $combined_src;
+    # warn $combined_src;
 
     my $parser = eval $combined_src; ## no critic
     die $@ if $@;
