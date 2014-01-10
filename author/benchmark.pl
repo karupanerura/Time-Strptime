@@ -32,11 +32,11 @@ for my $time_zone (qw|GMT UTC Asia/Tokyo America/Whitehorse|) {
         is($ts_parser->parse($text), $tp_parser->()->epoch);
     };
 
-    cmpthese timethese 200000 => +{
-        # 'dt(compiled)' => sub { $dt_parser->parse_datetime($text) },
+    cmpthese timethese 100000 => +{
+        'dt(compiled)' => sub { $dt_parser->parse_datetime($text) },
         'ts(compiled)' => sub { $ts_parser->parse($text)          },
-        # 'dt'           => sub { DateTime::Format::Strptime->new(pattern => $pattern)->parse_datetime($text) },
-        # 'ts'           => sub { Time::Strptime::Format->new($pattern)->parse($text)                         },
+        'dt'           => sub { DateTime::Format::Strptime->new(pattern => $pattern, time_zone => $time_zone)->parse_datetime($text) },
+        'ts'           => sub { Time::Strptime::Format->new($pattern)->parse($text)                                                  },
         'tp'           => $tp_parser,
     };
 }
