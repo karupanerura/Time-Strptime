@@ -94,9 +94,9 @@ sub _compile_format {
 
     # generate base src
     my $parser_src = <<EOD;
-my (\$epoch, \@matches, \%%stash, \$register);
+my (\$epoch, \%%stash);
 sub {
-    if (\@matches = (\$_[0] =~ m{\\A$format\\z}o)) {
+    if (\@stash{qw/@types/} = (\$_[0] =~ m{\\A$format\\z}o)) {
         \$epoch = 0;
         \%s;
     }
@@ -109,10 +109,7 @@ EOD
     # generate formatter src
     my $formatter_src = '';
     for my $type (@types) {
-        $formatter_src .= sprintf <<EOD, $self->_gen_stash_src($type);
-\$register = shift \@matches;
-%s
-EOD
+        $formatter_src .= $self->_gen_stash_finalize_src($type);
     }
     $formatter_src .= $self->_gen_calc_epoch_src(\%types_table);
 
@@ -150,28 +147,35 @@ sub _assemble_format {
     }
 }
 
-sub _gen_stash_src {
+sub _gen_stash_finalize_src {
     my ($self, $type) = @_;
-    return '$stash{epoch} = $register;' if $type eq 'epoch';
-    return "\$stash{$type} = \$register;";
+
+    if ($type eq 'timezone') {
+        return <<'EOD';
+local $ENV{TZ} = $stash{timezone};
+tzset();
+EOD
+    }
+    elsif ($type eq 'epoch') {
+        return <<'EOD';
+return $stash{epoch};
+EOD
+    }
+    elsif ($type eq 'offset') {
+        return <<'EOD';
+$epoch += $stash{offset} 60 * 60 / -100;
+EOD
+    }
+    else {
+        return ''; # default: none
+    }
 }
 
 sub _gen_calc_epoch_src {
     my ($self, $types_table) = @_;
-    return 'return $stash{epoch};' if $types_table->{epoch};
+
 
     my $src = '';
-
-    # timezone
-    $src .= <<EOD if $types_table->{timezone};
-local \$ENV{TZ} = \$stash{timezone};
-tzset();
-EOD
-
-    # offset
-    $src .= <<EOD if $types_table->{offset};
-\$epoch += \$stash{offset} * 60 * 60 / 100;
-EOD
 
     # hour24&minute&second
     # year&day365 or year&month&day

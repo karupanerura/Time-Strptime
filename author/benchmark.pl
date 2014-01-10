@@ -49,66 +49,66 @@ __END__
     1..2
 ok 1 - GMT(-0000)
 Benchmark: timing 100000 iterations of dt, dt(compiled), tp, ts, ts(compiled)...
-        dt: 52 wallclock secs (51.51 usr +  0.05 sys = 51.56 CPU) @ 1939.49/s (n=100000)
-dt(compiled): 32 wallclock secs (31.79 usr +  0.04 sys = 31.83 CPU) @ 3141.69/s (n=100000)
-        tp:  1 wallclock secs ( 0.86 usr +  0.00 sys =  0.86 CPU) @ 116279.07/s (n=100000)
-        ts: 32 wallclock secs (31.41 usr +  0.13 sys = 31.54 CPU) @ 3170.58/s (n=100000)
-ts(compiled):  1 wallclock secs ( 1.69 usr +  0.00 sys =  1.69 CPU) @ 59171.60/s (n=100000)
+        dt: 45 wallclock secs (45.37 usr +  0.02 sys = 45.39 CPU) @ 2203.13/s (n=100000)
+dt(compiled): 28 wallclock secs (27.43 usr +  0.01 sys = 27.44 CPU) @ 3644.31/s (n=100000)
+        tp:  0 wallclock secs ( 0.69 usr +  0.00 sys =  0.69 CPU) @ 144927.54/s (n=100000)
+        ts: 23 wallclock secs (22.65 usr +  0.04 sys = 22.69 CPU) @ 4407.23/s (n=100000)
+ts(compiled):  2 wallclock secs ( 1.55 usr +  0.00 sys =  1.55 CPU) @ 64516.13/s (n=100000)
                  Rate         dt dt(compiled)         ts ts(compiled)         tp
-dt             1939/s         --         -38%       -39%         -97%       -98%
-dt(compiled)   3142/s        62%           --        -1%         -95%       -97%
-ts             3171/s        63%           1%         --         -95%       -97%
-ts(compiled)  59172/s      2951%        1783%      1766%           --       -49%
-tp           116279/s      5895%        3601%      3567%          97%         --
+dt             2203/s         --         -40%       -50%         -97%       -98%
+dt(compiled)   3644/s        65%           --       -17%         -94%       -97%
+ts             4407/s       100%          21%         --         -93%       -97%
+ts(compiled)  64516/s      2828%        1670%      1364%           --       -55%
+tp           144928/s      6478%        3877%      3188%         125%         --
     # Subtest: UTC(-0000)
     ok 1
     ok 2
     1..2
 ok 2 - UTC(-0000)
 Benchmark: timing 100000 iterations of dt, dt(compiled), tp, ts, ts(compiled)...
-        dt: 52 wallclock secs (50.98 usr +  0.05 sys = 51.03 CPU) @ 1959.63/s (n=100000)
-dt(compiled): 30 wallclock secs (30.11 usr +  0.02 sys = 30.13 CPU) @ 3318.95/s (n=100000)
-        tp:  1 wallclock secs ( 0.79 usr +  0.00 sys =  0.79 CPU) @ 126582.28/s (n=100000)
-        ts: 30 wallclock secs (30.46 usr +  0.11 sys = 30.57 CPU) @ 3271.18/s (n=100000)
-ts(compiled):  2 wallclock secs ( 1.87 usr +  0.00 sys =  1.87 CPU) @ 53475.94/s (n=100000)
-                 Rate         dt         ts dt(compiled) ts(compiled)         tp
-dt             1960/s         --       -40%         -41%         -96%       -98%
-ts             3271/s        67%         --          -1%         -94%       -97%
-dt(compiled)   3319/s        69%         1%           --         -94%       -97%
-ts(compiled)  53476/s      2629%      1535%        1511%           --       -58%
-tp           126582/s      6359%      3770%        3714%         137%         --
+        dt: 46 wallclock secs (45.71 usr +  0.03 sys = 45.74 CPU) @ 2186.27/s (n=100000)
+dt(compiled): 27 wallclock secs (27.23 usr +  0.01 sys = 27.24 CPU) @ 3671.07/s (n=100000)
+        tp:  1 wallclock secs ( 0.68 usr +  0.00 sys =  0.68 CPU) @ 147058.82/s (n=100000)
+        ts: 23 wallclock secs (22.89 usr +  0.05 sys = 22.94 CPU) @ 4359.20/s (n=100000)
+ts(compiled):  1 wallclock secs ( 1.53 usr +  0.00 sys =  1.53 CPU) @ 65359.48/s (n=100000)
+                 Rate         dt dt(compiled)         ts ts(compiled)         tp
+dt             2186/s         --         -40%       -50%         -97%       -99%
+dt(compiled)   3671/s        68%           --       -16%         -94%       -98%
+ts             4359/s        99%          19%         --         -93%       -97%
+ts(compiled)  65359/s      2890%        1680%      1399%           --       -56%
+tp           147059/s      6626%        3906%      3274%         125%         --
     # Subtest: Asia/Tokyo(-0900)
     ok 1
     ok 2
     1..2
 ok 3 - Asia/Tokyo(-0900)
 Benchmark: timing 100000 iterations of dt, dt(compiled), tp, ts, ts(compiled)...
-        dt: 62 wallclock secs (61.18 usr +  0.06 sys = 61.24 CPU) @ 1632.92/s (n=100000)
-dt(compiled): 39 wallclock secs (39.10 usr +  0.04 sys = 39.14 CPU) @ 2554.93/s (n=100000)
-        tp:  2 wallclock secs ( 1.86 usr +  0.00 sys =  1.86 CPU) @ 53763.44/s (n=100000)
-        ts: 31 wallclock secs (31.35 usr +  0.11 sys = 31.46 CPU) @ 3178.64/s (n=100000)
-ts(compiled):  3 wallclock secs ( 2.60 usr +  0.00 sys =  2.60 CPU) @ 38461.54/s (n=100000)
+        dt: 54 wallclock secs (53.66 usr +  0.03 sys = 53.69 CPU) @ 1862.54/s (n=100000)
+dt(compiled): 35 wallclock secs (34.35 usr +  0.02 sys = 34.37 CPU) @ 2909.51/s (n=100000)
+        tp:  1 wallclock secs ( 1.64 usr +  0.00 sys =  1.64 CPU) @ 60975.61/s (n=100000)
+        ts: 24 wallclock secs (23.49 usr +  0.04 sys = 23.53 CPU) @ 4249.89/s (n=100000)
+ts(compiled):  2 wallclock secs ( 2.28 usr +  0.00 sys =  2.28 CPU) @ 43859.65/s (n=100000)
                 Rate         dt dt(compiled)         ts ts(compiled)          tp
-dt            1633/s         --         -36%       -49%         -96%        -97%
-dt(compiled)  2555/s        56%           --       -20%         -93%        -95%
-ts            3179/s        95%          24%         --         -92%        -94%
-ts(compiled) 38462/s      2255%        1405%      1110%           --        -28%
-tp           53763/s      3192%        2004%      1591%          40%          --
+dt            1863/s         --         -36%       -56%         -96%        -97%
+dt(compiled)  2910/s        56%           --       -32%         -93%        -95%
+ts            4250/s       128%          46%         --         -90%        -93%
+ts(compiled) 43860/s      2255%        1407%       932%           --        -28%
+tp           60976/s      3174%        1996%      1335%          39%          --
     # Subtest: America/Whitehorse(+0800)
     ok 1
     ok 2
     1..2
 ok 4 - America/Whitehorse(+0800)
 Benchmark: timing 100000 iterations of dt, dt(compiled), tp, ts, ts(compiled)...
-        dt: 62 wallclock secs (62.15 usr +  0.06 sys = 62.21 CPU) @ 1607.46/s (n=100000)
-dt(compiled): 40 wallclock secs (40.90 usr +  0.05 sys = 40.95 CPU) @ 2442.00/s (n=100000)
-        tp:  2 wallclock secs ( 1.85 usr +  0.00 sys =  1.85 CPU) @ 54054.05/s (n=100000)
-        ts: 31 wallclock secs (31.54 usr +  0.11 sys = 31.65 CPU) @ 3159.56/s (n=100000)
-ts(compiled):  3 wallclock secs ( 2.63 usr +  0.00 sys =  2.63 CPU) @ 38022.81/s (n=100000)
+        dt: 56 wallclock secs (55.38 usr +  0.03 sys = 55.41 CPU) @ 1804.73/s (n=100000)
+dt(compiled): 36 wallclock secs (36.09 usr +  0.02 sys = 36.11 CPU) @ 2769.32/s (n=100000)
+        tp:  1 wallclock secs ( 1.57 usr +  0.00 sys =  1.57 CPU) @ 63694.27/s (n=100000)
+        ts: 22 wallclock secs (23.64 usr +  0.04 sys = 23.68 CPU) @ 4222.97/s (n=100000)
+ts(compiled):  3 wallclock secs ( 2.43 usr +  0.00 sys =  2.43 CPU) @ 41152.26/s (n=100000)
                 Rate         dt dt(compiled)         ts ts(compiled)          tp
-dt            1607/s         --         -34%       -49%         -96%        -97%
-dt(compiled)  2442/s        52%           --       -23%         -94%        -95%
-ts            3160/s        97%          29%         --         -92%        -94%
-ts(compiled) 38023/s      2265%        1457%      1103%           --        -30%
-tp           54054/s      3263%        2114%      1611%          42%          --
+dt            1805/s         --         -35%       -57%         -96%        -97%
+dt(compiled)  2769/s        53%           --       -34%         -93%        -96%
+ts            4223/s       134%          52%         --         -90%        -93%
+ts(compiled) 41152/s      2180%        1386%       874%           --        -35%
+tp           63694/s      3429%        2200%      1408%          55%          --
 1..4
