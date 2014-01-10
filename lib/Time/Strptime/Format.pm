@@ -2,7 +2,6 @@ package Time::Strptime::Format;
 use strict;
 use warnings;
 use utf8;
-use 5.10.0;
 
 use Carp ();
 use Time::Local ();
@@ -88,22 +87,42 @@ sub _compile_format {
     my $self = shift;
     my $format = $self->{format};
 
+    # generate anon package
+    my $parser_package;
+    $self->{_parser_package}{$format}->cleanup if $self->{_parser_package}{$format};
+    $parser_package = $self->{_parser_package}{$format}
+        ||= __PACKAGE__ . '::__ANON__::Parser' . (0+$self) . time . $$ . int rand . 0+{};
+
+    # assemble format to regexp
     my @types;
     $format =~ s{%(.)}{$self->_assemble_format($1, \@types)}ge;
-
     my %types_table = map { $_ => 1 } @types;
+
+    # generate base src
     my $parser_src = <<EOD;
-package @{[ __PACKAGE__ . '::__ANON__::Parser' . time . $$ . int(rand()) . int(+{}) ]};
+package $parser_package;
+use strict;
+use warnings;
+use utf8;
+
 use Carp ();
 use Time::Local ();
 use POSIX qw/tzset/;
 
 \*__TIME_STRPTIME_FORMAT_TO_EPOCH__ = @{[ $types_table{offset} ? 1 : 0 ]} ? \\\*Time::Local::timegm : \\\*Time::Local::timelocal;
-my (\@matches, \%%stash);
+
+my (\$epoch, \@matches, \%%stash, \$register);
+
+sub cleanup {
+    undef \$epoch;
+    undef \@matches;
+    undef \%%stash;
+    undef \$register;
+}
+
 sub {
     if (\@matches = (\$_[0] =~ m{\\A$format\\z}o)) {
-        local \$_;
-        my \$epoch = 0;
+        \$epoch = 0;
         \%s;
     }
     else {
@@ -112,61 +131,15 @@ sub {
 };
 EOD
 
+    # generate formatter src
     my $formatter_src = '';
     for my $type (@types) {
-        $formatter_src .= sprintf <<EOD, $self->_stash_src($type);
-\$_ = shift \@matches;
+        $formatter_src .= sprintf <<EOD, $self->_gen_stash_src($type);
+\$register = shift \@matches;
 %s
 EOD
     }
-
-    {
-        # epoch
-        $formatter_src .= <<EOD if $types_table{epoch};
-return \$stash{epoch};
-EOD
-        {
-            # timezone
-            $formatter_src .= <<EOD if $types_table{timezone};
-local \$ENV{TZ} = \$stash{timezone};
-tzset();
-EOD
-
-            # offset
-            $formatter_src .= <<EOD if $types_table{offset};
-\$epoch     += \$stash{offset} * 60 * 60 / 100;
-EOD
-
-            # hour24&minute&second
-            # year&day365 or year&month&day
-            if ($types_table{year} && $types_table{month} && $types_table{day}) {
-                $formatter_src .= <<EOD;
-\$epoch += __TIME_STRPTIME_FORMAT_TO_EPOCH__(@{[ $types_table{second} ? '$stash{second}' : 0 ]}, @{[ $types_table{minute} ? '$stash{minute}' : 0 ]}, @{[ $types_table{hour24} ? '$stash{hour24}' : 0 ]}, \$stash{day}, \$stash{month} - 1, \$stash{year} - 1900);
-EOD
-            }
-            elsif ($types_table{year} && $types_table{day365}) {
-                $formatter_src .= <<EOD;
-\$epoch += \$timelocal->(@{[ $types_table{second} ? '$stash{second}' : 0 ]}, @{[ $types_table{minute} ? '$stash{minute}' : 0 ]}, @{[ $types_table{hour24} ? '$stash{hour24}' : 0 ]}, 1, 0, \$stash{year} - 1900);
-\$epoch += \$stash{day365} * 60 * 60 * 24;
-EOD
-            }
-            else {
-                require Data::Dumper;
-
-                no warnings 'once';
-                local $Data::Dumper::Terse    = 1;
-                local $Data::Dumper::Indent   = 0;
-                local $Data::Dumper::SortKeys = 1;
-                use warnings 'once';
-
-                die 'unknown case. types: '.Data::Dumper->Dump([\@types]);
-            }
-        }
-        # finish
-        $formatter_src .= <<EOD;
-return \$epoch;
-EOD
-    }
+    $formatter_src .= $self->_gen_calc_epoch_src(\%types_table);
 
     my $combined_src = sprintf $parser_src, $formatter_src, $self->{format};
     # warn $combined_src;
@@ -183,7 +156,7 @@ sub _assemble_format {
     my ($type, $val) = @{ $self->{_handler}->{$c} };
     die "unsupported: \%$c" if $type eq 'UNSUPPORTED';
 
-    return ''   if $type eq 'TODO' and warn "SKIP(TODO): \%$c";
+    return ''   if $type eq 'TODO' and die "SKIP(TODO): \%$c";
     return $val if $type eq 'SKIP';
     return $val if $type eq 'char';
     if ($type eq 'extend') {
@@ -202,10 +175,64 @@ sub _assemble_format {
     }
 }
 
-sub _stash_src {
+sub _gen_stash_src {
     my ($self, $type) = @_;
-    return '$stash{epoch} = $_;' if $type eq 'epoch';
-    return "\$stash{$type} = \$_;";
+    return '$stash{epoch} = $register;' if $type eq 'epoch';
+    return "\$stash{$type} = \$register;";
+}
+
+sub _gen_calc_epoch_src {
+    my ($self, $types_table) = @_;
+    return 'return $stash{epoch};' if $types_table->{epoch};
+
+    my $src = '';
+
+    # timezone
+    $src .= <<EOD if $types_table->{timezone};
+local \$ENV{TZ} = \$stash{timezone};
+tzset();
+EOD
+
+    # offset
+    $src .= <<EOD if $types_table->{offset};
+\$epoch += \$stash{offset} * 60 * 60 / 100;
+EOD
+
+    # hour24&minute&second
+    # year&day365 or year&month&day
+    if ($types_table->{year} && $types_table->{month} && $types_table->{day}) {
+        $src .= <<EOD;
+\$epoch += __TIME_STRPTIME_FORMAT_TO_EPOCH__(@{[ $types_table->{second} ? '$stash{second}' : 0 ]}, @{[ $types_table->{minute} ? '$stash{minute}' : 0 ]}, @{[ $types_table->{hour24} ? '$stash{hour24}' : 0 ]}, \$stash{day}, \$stash{month} - 1, \$stash{year} - 1900);
+EOD
+    }
+    elsif ($types_table->{year} && $types_table->{day365}) {
+        $src .= <<EOD;
+\$epoch += \$timelocal->(@{[ $types_table->{second} ? '$stash{second}' : 0 ]}, @{[ $types_table->{minute} ? '$stash{minute}' : 0 ]}, @{[ $types_table->{hour24} ? '$stash{hour24}' : 0 ]}, 1, 0, \$stash{year} - 1900);
+\$epoch += \$stash{day365} * 60 * 60 * 24;
+EOD
+    }
+    else {
+        require Data::Dumper;
+
+        no warnings 'once';
+        local $Data::Dumper::Terse    = 1;
+        local $Data::Dumper::Indent   = 0;
+        local $Data::Dumper::SortKeys = 1;
+        use warnings 'once';
+
+        die 'unknown case. types: '.Data::Dumper->Dump([[ keys %$types_table ]]);
+    }
+
+    return $src;
+}
+
+sub DESTROY {
+    my $self = shift;
+    if ($self->{_parser_package}) {
+        for my $format (keys %{ $self->{_parser_package} }) {
+            $self->{_parser_package}->{$format}->cleanup;
+        }
+    }
 }
 
 1;
