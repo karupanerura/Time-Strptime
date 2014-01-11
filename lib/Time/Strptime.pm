@@ -5,14 +5,19 @@ use warnings;
 
 our $VERSION = "0.01";
 
+use parent qw/Exporter/;
+our @EXPORT_OK = qw/strptime/;
+
 use Carp ();
 use Time::Strptime::Format;
 
+my %instance_cache;
 sub strptime {
-    my ($format, $text) = @_;
+    my ($format_text, $date_text) = @_;
 
     local $Carp::CarpLevel = $Carp::CarpLevel + 1;
-    return Time::Strptime::Format->new($format)->parse($text);
+    my $format = $instance_cache{$format_text} ||= Time::Strptime::Format->new($format_text);
+    return $format->parse($date_text);
 }
 
 1;

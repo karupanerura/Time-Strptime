@@ -53,8 +53,6 @@ our %DEFAULT_HANDLER = (
     z   => [offset      => q{[-+][0-9]{4}}],
 );
 
-use Class::Accessor::Lite rw => [qw/format/];
-
 sub new {
     my ($class, $format, $handler) = @_;
     $handler ||= +{};
@@ -80,7 +78,7 @@ sub parse {
 
 sub _parser {
     my $self = shift;
-    return $self->{_parser}{$self->{format}} ||= $self->_compile_format;
+    return $self->{_parser} ||= $self->_compile_format;
 }
 
 sub _compile_format {
@@ -101,7 +99,7 @@ sub {
         \%s;
     }
     else {
-        Carp::croak "cannot parse datetime. text: \$_[0], format: \%s";
+        Carp::croak "cannot parse datetime. text: \$_[0], format: $self->{format}";
     }
 };
 EOD
@@ -113,7 +111,7 @@ EOD
     }
     $formatter_src .= $self->_gen_calc_epoch_src(\%types_table);
 
-    my $combined_src = sprintf $parser_src, $formatter_src, $self->{format};
+    my $combined_src = sprintf $parser_src, $formatter_src;
     # warn $combined_src;
 
     my $parser = eval $combined_src; ## no critic
@@ -126,9 +124,9 @@ sub _assemble_format {
     die "unknwon: \%$c" unless exists $self->{_handler}->{$c};
 
     my ($type, $val) = @{ $self->{_handler}->{$c} };
-    die "unsupported: \%$c" if $type eq 'UNSUPPORTED';
+    die "unsupported: \%$c. patches welcome :)" if $type eq 'UNSUPPORTED';
 
-    return ''   if $type eq 'TODO' and die "SKIP(TODO): \%$c";
+    return ''   if $type eq 'TODO' and warn "SKIP(TODO): \%$c. patches welcome :)";
     return $val if $type eq 'SKIP';
     return $val if $type eq 'char';
     if ($type eq 'extend') {
