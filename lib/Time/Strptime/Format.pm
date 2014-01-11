@@ -99,7 +99,7 @@ sub {
         \%s;
     }
     else {
-        Carp::croak "cannot parse datetime. text: \$_[0], format: $self->{format}";
+        Carp::croak "cannot parse datetime. text: \$_[0], format: \%s";
     }
 };
 EOD
@@ -111,7 +111,7 @@ EOD
     }
     $formatter_src .= $self->_gen_calc_epoch_src(\%types_table);
 
-    my $combined_src = sprintf $parser_src, $formatter_src;
+    my $combined_src = sprintf $parser_src, $formatter_src, $self->{format};
     # warn $combined_src;
 
     my $parser = eval $combined_src; ## no critic
