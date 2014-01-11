@@ -207,43 +207,36 @@ EOD
 1;
 __END__
 
-=pod
- 
+
+=encoding utf-8
+
 =head1 NAME
 
-Time::Strptime::Format - TODO
+Time::Strptime::Format - strptime format compiler and parser.
 
-=head1 VERSION
+=head1 SYNOPSIS
 
-This document describes Time::Strptime::Format version 0.01.
+    use Time::Strptime::Format;
+
+    # OO style
+    my $fmt = Time::Strptime::Format->new('%Y-%m-%d %H:%M:%S');
+    my $epoch_o = $fmt->parse('2014-01-01 00:00:00');
 
 =head1 DESCRIPTION
 
-TODO
+B<THE SOFTWARE IS IT'S IN ALPHA QUALITY. IT MAY CHANGE THE API WITHOUT NOTICE.>
 
-=head1 DEPENDENCIES
+This is L<Time::Strptime> engine.
 
-Perl 5.8.1 or later.
+=head1 LICENSE
 
-=head1 BUGS
-
-All complex software has bugs lurking in it, and this module is no
-exception. If you find a bug please either email me, or add the bug
-to cpan-RT.
-
-=head1 SEE ALSO
-
-L<perl>
-
-=head1 AUTHOR
-
-Kenta Sato E<lt>karupa@cpan.orgE<gt>
-
-=head1 LICENSE AND COPYRIGHT
-
-Copyright (c) 2012, Kenta Sato. All rights reserved.
+Copyright (C) karupanerura.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
+
+=head1 AUTHOR
+
+karupanerura E<lt>karupa@cpan.orgE<gt>
 
 =cut

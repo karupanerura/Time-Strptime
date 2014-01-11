@@ -1,5 +1,5 @@
 {
-   "abstract" : "It's new $module",
+   "abstract" : "parse date and time string.",
    "author" : [
       "karupanerura <karupa@cpan.org>"
    ],
