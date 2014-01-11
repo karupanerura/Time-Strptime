@@ -35,20 +35,24 @@
       },
       "develop" : {
          "requires" : {
+            "DateTime" : "0",
             "Test::CPAN::Meta" : "0",
             "Test::MinimumVersion" : "0.10108",
             "Test::Pod" : "1.41",
-            "Test::Spellunker" : "v0.2.7"
+            "Test::Spellunker" : "v0.2.7",
+            "Time::Piece" : "0"
          }
       },
       "runtime" : {
          "requires" : {
+            "Time::Local" : "0",
+            "parent" : "0",
             "perl" : "5.008005"
          }
       },
       "test" : {
          "requires" : {
-            "Test::More" : "0.98"
+            "Test::More" : "0"
          }
       }
    },
