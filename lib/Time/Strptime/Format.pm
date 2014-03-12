@@ -5,6 +5,7 @@ use utf8;
 
 use Carp ();
 use Time::Local ();
+use Time::TZOffset qw/tzoffset/;
 use POSIX qw/tzset/;
 
 our $VERSION = 0.01;
@@ -49,7 +50,7 @@ our %DEFAULT_HANDLER = (
     x   => ['UNSUPPORTED'],
     Y   => [year        => q{[0-9]{4}}],
     y   => ['UNSUPPORTED'],
-    Z   => [timezone    => q{[A-Z]+}],
+    Z   => [timezone    => ['[-A-Z]+', '[A-Z][a-z]+(?:/[A-Z][a-z]+)+']],
     z   => [offset      => q{[-+][0-9]{4}}],
 );
 
@@ -91,15 +92,17 @@ sub _compile_format {
     my %types_table = map { $_ => 1 } @types;
 
     # generate base src
+    local $" = ' ';
     my $parser_src = <<EOD;
-my (\$epoch, \%%stash);
+my (\$epoch, \$offset, \%%stash);
 sub {
     if (\@stash{qw/@types/} = (\$_[0] =~ m{\\A$format\\z}o)) {
         \$epoch = 0;
         \%s;
+        return (\$epoch, \$offset);
     }
     else {
-        Carp::croak "cannot parse datetime. text: \$_[0], format: \%s";
+        Carp::croak "cannot parse datetime. text: '\$_[0]', format: '\%s'";
     }
 };
 EOD
@@ -109,6 +112,7 @@ EOD
     for my $type (@types) {
         $formatter_src .= $self->_gen_stash_finalize_src($type);
     }
+    $formatter_src .= $self->_gen_calc_offset_src(\%types_table);
     $formatter_src .= $self->_gen_calc_epoch_src(\%types_table);
 
     my $combined_src = sprintf $parser_src, $formatter_src, $self->{format};
@@ -154,31 +158,59 @@ local $ENV{TZ} = $stash{timezone};
 tzset();
 EOD
     }
-    elsif ($type eq 'epoch') {
-        return <<'EOD';
-return $stash{epoch};
-EOD
-    }
-    elsif ($type eq 'offset') {
-        return <<'EOD';
-$epoch += $stash{offset} 60 * 60 / -100;
-EOD
-    }
     else {
         return ''; # default: none
     }
 }
 
-sub _gen_calc_epoch_src {
+sub _gen_calc_offset_src {
     my ($self, $types_table) = @_;
 
+    my $src = '';
+    if ($types_table->{offset}) {
+        $src .= <<'EOD';
+$offset = $stash{offset};
+$offset = (abs($offset) == $offset ? -1 : 1) * (60 * 60 * substr($offset, 1, 2) + 60 * substr($offset, 3, 2));
+EOD
+    }
+    elsif ($types_table->{timezone}) {
+        $src .= <<'EOD';
+$offset = tzoffset(localtime);
+$offset = (abs($offset) == $offset ? -1 : 1) * (60 * 60 * substr($offset, 1, 2) + 60 * substr($offset, 3, 2));
+EOD
+    }
+    else {
+        my $offset = tzoffset(localtime);
+           $offset = (abs($offset) == $offset ? -1 : 1) * (60 * 60 * substr($offset, 1, 2) + 60 * substr($offset, 3, 2));
+        $src .= sprintf <<'EOD', $offset;
+$offset = %d;
+EOD
+    }
+
+    if ($types_table->{offset} && !$types_table->{epoch}) {
+        $src .= <<'EOD';
+$epoch += $offset;
+EOD
+    }
+
+    return $src;
+}
+
+
+sub _gen_calc_epoch_src {
+    my ($self, $types_table) = @_;
 
     my $src = '';
 
     # hour24&minute&second
     # year&day365 or year&month&day
     my $timelocal_sub = "Time::Local::time@{[ $types_table->{offset} ? 'gm' : 'local' ]}";
-    if ($types_table->{year} && $types_table->{month} && $types_table->{day}) {
+    if ($types_table->{epoch}) {
+        $src .= <<'EOD';
+$epoch += $stash{epoch};
+EOD
+    }
+    elsif ($types_table->{year} && $types_table->{month} && $types_table->{day}) {
         $src .= <<EOD;
 \$epoch += ${timelocal_sub}(@{[ $types_table->{second} ? '$stash{second}' : 0 ]}, @{[ $types_table->{minute} ? '$stash{minute}' : 0 ]}, @{[ $types_table->{hour24} ? '$stash{hour24}' : 0 ]}, \$stash{day}, \$stash{month} - 1, \$stash{year} - 1900);
 EOD
@@ -220,7 +252,7 @@ Time::Strptime::Format - strptime format compiler and parser.
 
     # OO style
     my $fmt = Time::Strptime::Format->new('%Y-%m-%d %H:%M:%S');
-    my $epoch_o = $fmt->parse('2014-01-01 00:00:00');
+    my ($epoch_o, $offset_o) = $fmt->parse('2014-01-01 00:00:00');
 
 =head1 DESCRIPTION
 

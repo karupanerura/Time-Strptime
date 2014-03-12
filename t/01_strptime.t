@@ -1,16 +1,16 @@
 use strict;
-use Test::More;
+
+BEGIN {
+    # Windows can't change timezone inside Perl script
+    if (($ENV{TZ}||'') ne 'GMT') {
+        $ENV{TZ} = 'GMT';
+        exec $^X, (map { "-I\"$_\"" } @INC), $0;
+    };
+}
 
 use Time::Strptime qw/strptime/;
-use POSIX qw/tzset/;
+use Test::More tests => 2;
 
-local $ENV{TZ} = 'GMT';
-tzset();
-is strptime('%Y-%m-%d %H:%M:%S', '2014-01-01 01:23:45'), 1388539425;
-
-local $ENV{TZ} = 'Asia/Tokyo';
-tzset();
-is strptime('%Y-%m-%d %H:%M:%S', '2014-01-01 01:23:45'), 1388507025;
-
-done_testing;
-
+my ($epoch, $offset) = strptime('%Y-%m-%d %H:%M:%S', '2014-01-01 01:23:45');
+is $epoch,  1388539425, 'epoch  OK';
+is $offset, 0,          'offset OK';
