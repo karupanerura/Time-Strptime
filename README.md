@@ -25,32 +25,32 @@ This module allows you to perform better by pre-compile the format by string.
 benchmark:GMT(-0000) `dt=DateTime, ts=Time::Strptime, tp=Time::Piece`
 
     Benchmark: timing 100000 iterations of dt, dt(compiled), tp, ts, ts(compiled)...
-            dt: 50 wallclock secs (50.42 usr +  0.08 sys = 50.50 CPU) @ 1980.20/s (n=100000)
-    dt(compiled): 31 wallclock secs (30.25 usr +  0.05 sys = 30.30 CPU) @ 3300.33/s (n=100000)
-            tp:  1 wallclock secs ( 0.71 usr +  0.00 sys =  0.71 CPU) @ 140845.07/s (n=100000)
-            ts: 28 wallclock secs (27.97 usr +  0.09 sys = 28.06 CPU) @ 3563.79/s (n=100000)
-    ts(compiled):  1 wallclock secs ( 1.72 usr +  0.00 sys =  1.72 CPU) @ 58139.53/s (n=100000)
-                     Rate         dt dt(compiled)         ts ts(compiled)         tp
-    dt             1980/s         --         -40%       -44%         -97%       -99%
-    dt(compiled)   3300/s        67%           --        -7%         -94%       -98%
-    ts             3564/s        80%           8%         --         -94%       -97%
-    ts(compiled)  58140/s      2836%        1662%      1531%           --       -59%
-    tp           140845/s      7013%        4168%      3852%         142%         --
+                dt: 45 wallclock secs (44.24 usr +  0.02 sys = 44.26 CPU) @ 2259.38/s (n=100000)
+    dt(compiled): 26 wallclock secs (26.43 usr +  0.01 sys = 26.44 CPU) @ 3782.15/s (n=100000)
+            tp:  2 wallclock secs ( 1.55 usr +  0.00 sys =  1.55 CPU) @ 64516.13/s (n=100000)
+            ts: 30 wallclock secs (30.17 usr +  0.05 sys = 30.22 CPU) @ 3309.07/s (n=100000)
+    ts(compiled):  1 wallclock secs ( 1.51 usr +  0.00 sys =  1.51 CPU) @ 66225.17/s (n=100000)
+                    Rate         dt         ts dt(compiled)          tp ts(compiled)
+    dt            2259/s         --       -32%         -40%        -96%         -97%
+    ts            3309/s        46%         --         -13%        -95%         -95%
+    dt(compiled)  3782/s        67%        14%           --        -94%         -94%
+    tp           64516/s      2755%      1850%        1606%          --          -3%
+    ts(compiled) 66225/s      2831%      1901%        1651%          3%           --
 
 benchmark:Asia/Tokyo(-0900) `dt=DateTime, ts=Time::Strptime, tp=Time::Piece`
 
     Benchmark: timing 100000 iterations of dt, dt(compiled), tp, ts, ts(compiled)...
-            dt: 59 wallclock secs (59.07 usr +  0.10 sys = 59.17 CPU) @ 1690.05/s (n=100000)
-    dt(compiled): 38 wallclock secs (38.16 usr +  0.07 sys = 38.23 CPU) @ 2615.75/s (n=100000)
-            tp:  2 wallclock secs ( 1.84 usr +  0.00 sys =  1.84 CPU) @ 54347.83/s (n=100000)
-            ts: 30 wallclock secs (30.21 usr +  0.11 sys = 30.32 CPU) @ 3298.15/s (n=100000)
-    ts(compiled):  3 wallclock secs ( 2.61 usr +  0.01 sys =  2.62 CPU) @ 38167.94/s (n=100000)
+                dt: 53 wallclock secs (53.30 usr +  0.02 sys = 53.32 CPU) @ 1875.47/s (n=100000)
+    dt(compiled): 34 wallclock secs (33.96 usr +  0.01 sys = 33.97 CPU) @ 2943.77/s (n=100000)
+            tp:  2 wallclock secs ( 1.60 usr +  0.00 sys =  1.60 CPU) @ 62500.00/s (n=100000)
+            ts: 31 wallclock secs (31.36 usr +  0.05 sys = 31.41 CPU) @ 3183.70/s (n=100000)
+    ts(compiled):  3 wallclock secs ( 2.26 usr +  0.00 sys =  2.26 CPU) @ 44247.79/s (n=100000)
                     Rate         dt dt(compiled)         ts ts(compiled)          tp
-    dt            1690/s         --         -35%       -49%         -96%        -97%
-    dt(compiled)  2616/s        55%           --       -21%         -93%        -95%
-    ts            3298/s        95%          26%         --         -91%        -94%
-    ts(compiled) 38168/s      2158%        1359%      1057%           --        -30%
-    tp           54348/s      3116%        1978%      1548%          42%          --
+    dt            1875/s         --         -36%       -41%         -96%        -97%
+    dt(compiled)  2944/s        57%           --        -8%         -93%        -95%
+    ts            3184/s        70%           8%         --         -93%        -95%
+    ts(compiled) 44248/s      2259%        1403%      1290%           --        -29%
+    tp           62500/s      3232%        2023%      1863%          41%          --
 
 # FAQ
 
@@ -64,6 +64,7 @@ This module is fast and not require XS. but, support epoch `strptime` only.
 ## How to specify a time zone?
 
 Set time zone to `$ENV{TZ}` and call `POSIX::tzset()`.
+NOTE: `POSIX::tzset()` is not supported on `cygwin` and `MSWin32`.
 
 example:
 
@@ -72,7 +73,14 @@ example:
 
     local $ENV{TZ} = 'Asia/Tokyo';
     tzset();
-    my $epoch_f = strptime('%Y-%m-%d %H:%M:%S', '2014-01-01 00:00:00');
+    my ($epoch, $offset) = strptime('%Y-%m-%d %H:%M:%S', '2014-01-01 00:00:00');
+
+And, This code is same as:
+
+    use Time::Strptime::Format;
+
+    my $format = Time::Strptime::Format->new('%Y-%m-%d %H:%M:%S', { time_zone => 'Asia/Tokyo' });
+    my ($epoch, $offset) = $format->parse('2014-01-01 00:00:00');
 
 # LICENSE
 

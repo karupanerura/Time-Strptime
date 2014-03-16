@@ -1,3 +1,6 @@
+requires 'Encode';
+requires 'Encode::Locale';
+requires 'Locale::Scope';
 requires 'Time::Local';
 requires 'parent';
 requires 'perl', '5.008005';
@@ -13,6 +16,7 @@ on test => sub {
 };
 
 on develop => sub {
-    requires 'DateTime';
     requires 'Time::Piece';
+    requires 'Time::TZOffset';
+    requires 'DateTime::Format::Strptime';
 };

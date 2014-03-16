@@ -4,36 +4,66 @@ use warnings;
 use utf8;
 
 use Carp ();
-use Time::Local ();
-use Time::TZOffset qw/tzoffset/;
-use POSIX qw/tzset/;
+use Time::Local qw/timelocal timegm/;
+use Encode qw/decode/;
+use Encode::Locale;
+use Locale::Scope qw/locale_scope/;
+use POSIX qw/tzset strftime LC_ALL/;
 
 our $VERSION = 0.01;
 
+BEGIN {
+    if (eval { require Time::TZOffset; 1 }) {
+        *tzoffset_as_epoch = sub {
+            my $offset = Time::TZOffset::tzoffset(@_);
+            return (abs($offset) == $offset ? 1 : -1) * (60 * 60 * substr($offset, 1, 2) + 60 * substr($offset, 3, 2));
+        };
+    }
+    else {
+        *tzoffset_as_epoch = sub {
+            return timelocal(@_) - timegm(@_);
+        };
+    }
+}
+
 our %DEFAULT_HANDLER = (
-    '%' => [char        => '%' ],
-    A   => ['UNSUPPORTED'],
-    a   => ['UNSUPPORTED'],
-    B   => ['UNSUPPORTED'],
-    b   => ['UNSUPPORTED'],
+    '%' => [char          => '%' ],
+    A   => [SKIP          => sub { map { decode(locale => $_) } map { strftime('%a', 0, 0, 0, $_, 0, 0), strftime('%A', 0, 0, 0, $_, 0, 0) } 1..7 } ],
+    a   => [extend        => q{%A} ],
+    B   => [localed_month => sub {
+        my $self = shift;
+
+        unless (exists $self->{format_table}{localed_month}) {
+            my %format_table;
+            for my $month (1..12) {
+                $format_table{decode(locale => strftime('%b', 0, 0, 0, 1, $_-1, 0))} = $month;
+                $format_table{decode(locale => strftime('%B', 0, 0, 0, 1, $_-1, 0))} = $month;
+            }
+            $self->{format_table}{localed_month} = \%format_table;
+        }
+
+        return [keys %{ $self->{format_table}{localed_month} }];
+    } ],
+    b   => [extend      => q{%B}],
     C   => [SKIP        => q{[0-9]{2}} ],
     c   => ['UNSUPPORTED'],
     D   => [extend      => q{%m/%d/%Y}                    ],
     d   => [day         => ['0[1-9]','[12][0-9]','3[01]'] ],
     e   => [day         => [' [1-9]','[12][0-9]','3[01]'] ],
     F   => [extend      => q{%Y-%m-%d} ],
-    G   => ['UNSUPPORTED'],
-    g   => ['UNSUPPORTED'],
+    G   => [year        => q{%Y} ], ## It's realy OK?
+    g   => [SKIP        => q{[0-9]{2}} ],
     H   => [hour24      => ['[01][0-9]','2[0-3]'] ],
     h   => [extend      => q{%b}                     ],
-    I   => ['UNSUPPORTED'],
+    I   => [hour12      => ['0[1-9]', '1[0-2]'] ],
     j   => [day365      => ['00[1-9]','[12][0-9][0-9]','3[0-5][0-9]','36[0-6]'] ],
     k   => [hour24      => ['[ 1][0-9]','2[0-3]'] ],
-    l   => ['UNSUPPORTED'],
+    l   => [hour12      => [' [1-9]', '1[0-2]'] ],
     M   => [minute      => q{[0-5][0-9]}          ],
     m   => [month       => ['0[1-9]','1[0-2]']    ],
-    n   => [char        => "\n"                   ],
-    p   => ['UNSUPPORTED'],
+    n   => [SKIP        => q{\s+}                 ],
+    p   => [ampm        => q{[AP]M}],
+    P   => [ampm        => q{[ap]m}],
     R   => [extend      => q{%H:%M}               ],
     r   => [extend      => q{%I:%M:%S %p}         ],
     S   => [second      => ['[0-5][0-9]','60']    ],
@@ -55,14 +85,16 @@ our %DEFAULT_HANDLER = (
 );
 
 sub new {
-    my ($class, $format, $handler) = @_;
-    $handler ||= +{};
+    my ($class, $format, $options) = @_;
+    $options ||= +{};
 
     my $self = bless +{
-        format   => $format,
-        _handler => +{
+        format    => $format,
+        time_zone => $options->{time_zone} || $ENV{TZ} || strftime('%Z', localtime) || 'GMT',
+        locale    => $options->{locale}    || 'C',
+        _handler  => +{
             %DEFAULT_HANDLER,
-            %$handler,
+            %{ $options->{handler} || {} },
         },
     } => $class;
 
@@ -86,18 +118,26 @@ sub _compile_format {
     my $self = shift;
     my $format = $self->{format};
 
+    # setlocale and tzset
+    my $locale = locale_scope(LC_ALL, $self->{locale});
+    local $ENV{TZ} = $self->{time_zone};
+    tzset();
+
     # assemble format to regexp
     my @types;
-    $format =~ s{%(.)}{$self->_assemble_format($1, \@types)}ge;
-    my %types_table = map { $_ => 1 } @types;
+    $format =~ s{([^%]*)?%(.)([^%]*)?}{quotemeta($1||'') .$self->_assemble_format($2, \@types) . quotemeta($3||'')}geo;
+    my %types_table = map { $_ => 1 } map {
+        my $t = $_;
+        $t =~ s/^localized_//;
+        $t;
+    } @types;
 
     # generate base src
     local $" = ' ';
     my $parser_src = <<EOD;
 my (\$epoch, \$offset, \%%stash);
 sub {
-    if (\@stash{qw/@types/} = (\$_[0] =~ m{\\A$format\\z}o)) {
-        \$epoch = 0;
+    if (\@stash{qw/@types/} = (\$_[0] =~ m{\\A$format\\z}mso)) {
         \%s;
         return (\$epoch, \$offset);
     }
@@ -110,14 +150,15 @@ EOD
     # generate formatter src
     my $formatter_src = '';
     for my $type (@types) {
-        $formatter_src .= $self->_gen_stash_finalize_src($type);
+        $formatter_src .= $self->_gen_stash_initialize_src($type);
     }
-    $formatter_src .= $self->_gen_calc_offset_src(\%types_table);
     $formatter_src .= $self->_gen_calc_epoch_src(\%types_table);
+    $formatter_src .= $self->_gen_calc_offset_src(\%types_table);
 
     my $combined_src = sprintf $parser_src, $formatter_src, $self->{format};
     # warn $combined_src;
 
+    my $format_table = $self->{format_table} || {};
     my $parser = eval $combined_src; ## no critic
     die $@ if $@;
     return $parser;
@@ -130,26 +171,28 @@ sub _assemble_format {
     my ($type, $val) = @{ $self->{_handler}->{$c} };
     die "unsupported: \%$c. patches welcome :)" if $type eq 'UNSUPPORTED';
 
-    return ''   if $type eq 'TODO' and warn "SKIP(TODO): \%$c. patches welcome :)";
-    return $val if $type eq 'SKIP';
-    return $val if $type eq 'char';
+    # normalize
+    if (ref $val) {
+        $val = $self->$val($type) if ref $val eq 'CODE';
+        $val = join '|', @$val    if ref $val eq 'ARRAY';
+    }
+
+    # assemble to regexp
     if ($type eq 'extend') {
         $val =~ s{%(.)}{$self->_assemble_format($1, $types)}ge;
         return $val;
     }
     else {
+        return ''   if $type eq 'TODO' and warn "SKIP(TODO): \%$c. patches welcome :)";
+        return $val if $type eq 'SKIP';
+        return $val if $type eq 'char';
+
         push @$types => $type;
-
-        if (ref $val) {
-            $val = $self->$val($type) if ref $val eq 'CODE';
-            $val = join '|', @$val    if ref $val eq 'ARRAY';
-        }
-
         return "($val)";
     }
 }
 
-sub _gen_stash_finalize_src {
+sub _gen_stash_initialize_src {
     my ($self, $type) = @_;
 
     if ($type eq 'timezone') {
@@ -158,44 +201,15 @@ local $ENV{TZ} = $stash{timezone};
 tzset();
 EOD
     }
+    elsif ($type =~ /^localed_([a-z]+)$/) {
+        return <<EOD;
+\$stash{${1}} = \$format_table->{localed_${1}}->{\$stash{localed_${1}}};
+EOD
+    }
     else {
         return ''; # default: none
     }
 }
-
-sub _gen_calc_offset_src {
-    my ($self, $types_table) = @_;
-
-    my $src = '';
-    if ($types_table->{offset}) {
-        $src .= <<'EOD';
-$offset = $stash{offset};
-$offset = (abs($offset) == $offset ? -1 : 1) * (60 * 60 * substr($offset, 1, 2) + 60 * substr($offset, 3, 2));
-EOD
-    }
-    elsif ($types_table->{timezone}) {
-        $src .= <<'EOD';
-$offset = tzoffset(localtime);
-$offset = (abs($offset) == $offset ? -1 : 1) * (60 * 60 * substr($offset, 1, 2) + 60 * substr($offset, 3, 2));
-EOD
-    }
-    else {
-        my $offset = tzoffset(localtime);
-           $offset = (abs($offset) == $offset ? -1 : 1) * (60 * 60 * substr($offset, 1, 2) + 60 * substr($offset, 3, 2));
-        $src .= sprintf <<'EOD', $offset;
-$offset = %d;
-EOD
-    }
-
-    if ($types_table->{offset} && !$types_table->{epoch}) {
-        $src .= <<'EOD';
-$epoch += $offset;
-EOD
-    }
-
-    return $src;
-}
-
 
 sub _gen_calc_epoch_src {
     my ($self, $types_table) = @_;
@@ -204,36 +218,78 @@ sub _gen_calc_epoch_src {
 
     # hour24&minute&second
     # year&day365 or year&month&day
-    my $timelocal_sub = "Time::Local::time@{[ $types_table->{offset} ? 'gm' : 'local' ]}";
+    my $second        = $types_table->{second} ? '$stash{second}' : 0;
+    my $minute        = $types_table->{minute} ? '$stash{minute}' : 0;
+    my $hour          = $self->_gen_calc_hour_src($types_table);
     if ($types_table->{epoch}) {
         $src .= <<'EOD';
-$epoch += $stash{epoch};
+$epoch = $stash{epoch};
 EOD
     }
     elsif ($types_table->{year} && $types_table->{month} && $types_table->{day}) {
         $src .= <<EOD;
-\$epoch += ${timelocal_sub}(@{[ $types_table->{second} ? '$stash{second}' : 0 ]}, @{[ $types_table->{minute} ? '$stash{minute}' : 0 ]}, @{[ $types_table->{hour24} ? '$stash{hour24}' : 0 ]}, \$stash{day}, \$stash{month} - 1, \$stash{year} - 1900);
+\$epoch = timegm($second, $minute, $hour, \$stash{day}, \$stash{month} - 1, \$stash{year} - 1900);
 EOD
     }
     elsif ($types_table->{year} && $types_table->{day365}) {
         $src .= <<EOD;
-\$epoch += ${timelocal_sub}(@{[ $types_table->{second} ? '$stash{second}' : 0 ]}, @{[ $types_table->{minute} ? '$stash{minute}' : 0 ]}, @{[ $types_table->{hour24} ? '$stash{hour24}' : 0 ]}, 1, 0, \$stash{year} - 1900);
-\$epoch += \$stash{day365} * 60 * 60 * 24;
+\$epoch = timegm($second, $minute, $hour, 1, 0, \$stash{year} - 1900) + \$stash{day365} * 60 * 60 * 24;
 EOD
     }
     else {
-        require Data::Dumper;
-
-        no warnings 'once';
-        local $Data::Dumper::Terse    = 1;
-        local $Data::Dumper::Indent   = 0;
-        local $Data::Dumper::SortKeys = 1;
-        use warnings 'once';
-
-        die 'unknown case. types: '.Data::Dumper->Dump([[ keys %$types_table ]]);
+        die 'unknown case. types: '. join ', ', keys %$types_table;
     }
 
     return $src;
+}
+
+sub _gen_calc_offset_src {
+    my ($self, $types_table) = @_;
+
+    my $src = '';
+
+    my $second = $types_table->{second} ? '$stash{second}' : 0;
+    my $minute = $types_table->{minute} ? '$stash{minute}' : 0;
+    my $hour   = $self->_gen_calc_hour_src($types_table);
+    if ($types_table->{offset}) {
+        $src .= <<'EOD';
+$offset = (abs($stash{offset}) == $stash{offset} ? 1 : -1) * (60 * 60 * substr($stash{offset}, 1, 2) + 60 * substr($stash{offset}, 3, 2));
+EOD
+    }
+    elsif ($types_table->{year} && $types_table->{month} && $types_table->{day}) {
+        $src .= <<EOD;
+\$offset = tzoffset_as_epoch($second, $minute, $hour, \$stash{day}, \$stash{month} - 1, \$stash{year} - 1900);
+EOD
+    }
+    elsif ($types_table->{year} && $types_table->{day365}) {
+        $src .= <<EOD;
+\$offset = tzoffset_as_epoch($second, $minute, $hour, 1, 0, \$stash{year} - 1900);
+EOD
+    }
+    else {
+        die 'unknown case. types: '. join ', ', keys %$types_table;
+    }
+
+    $src .= <<'EOD' unless $types_table->{epoch};
+$epoch -= $offset;
+EOD
+
+    return $src;
+}
+
+sub _gen_calc_hour_src {
+    my ($self, $types_table) = @_;
+
+    if ($types_table->{hour24}) {
+        return '$stash{hour24}';
+    }
+    elsif ($types_table->{hour12} && $types_table->{ampm}) {
+        return <<'EOD';
+($stash{hour12} == 12 ? (uc $stash{ampm} eq q{AM} ? 0 : 12) : ($stash{hour12} + (uc $stash{ampm} eq q{PM} ? 12 : 0)))
+EOD
+    } else {
+        return 0;
+    }
 }
 
 1;
