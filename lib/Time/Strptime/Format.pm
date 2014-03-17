@@ -300,7 +300,7 @@ __END__
 
 =head1 NAME
 
-Time::Strptime::Format - strptime format compiler and parser.
+Time::Strptime::Format - L<strptime(3)> format compiler and parser.
 
 =head1 SYNOPSIS
 
