@@ -167,8 +167,6 @@ EOD
 
 sub _assemble_format {
     my ($self, $c, $types) = @_;
-    die "unknwon: \%$c" unless exists $self->{_handler}->{$c};
-
     my ($type, $val) = @{ $self->{_handler}->{$c} };
     die "unsupported: \%$c. patches welcome :)" if $type eq 'UNSUPPORTED';
 
@@ -242,6 +240,12 @@ EOD
         die 'unknown case. types: '. join ', ', keys %$types_table;
     }
 
+    # stash value slice optimizetion
+    # e.g. ($stash{second}, $stash{minute}, $stash{hour24}, $stash{day}, => (@stash{qw!second minute hour24 day!},
+    my @keys;
+    push @keys => $1 while $src =~ /(?:[(,]\s*|\G)\$stash\{(\w+)\}(?=\s*[,)])/msgo;
+    $src =~ s/([(,]\s*)(?:\$stash\{\w+\}(\s*[,)]\s*)){2,}/${1}\@stash{qw!@keys!}$+/msgo if @keys >= 2;
+
     return $src;
 }
 
@@ -283,6 +287,12 @@ EOD
     $src .= <<'EOD' unless $types_table->{epoch} || $fix_offset;
 $epoch -= $offset;
 EOD
+
+    # stash value slice optimizetion
+    # e.g. ($stash{second}, $stash{minute}, $stash{hour24}, $stash{day}, => (@stash{qw!second minute hour24 day!},
+    my @keys;
+    push @keys => $1 while $src =~ /(?:[(,]\s*|\G)\$stash\{(\w+)\}(?=\s*[,)])/msgo;
+    $src =~ s/([(,]\s*)(?:\$stash\{\w+\}(\s*[,)]\s*)){2,}/${1}\@stash{qw!@keys!}$+/msgo if @keys >= 2;
 
     return $src;
 }
