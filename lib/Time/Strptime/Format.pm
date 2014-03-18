@@ -124,8 +124,9 @@ sub _compile_format {
     tzset();
 
     # assemble format to regexp
+    my $handlers = join '', keys %{ $self->{_handler} };
     my @types;
-    $format =~ s{([^%]*)?%(.)([^%]*)?}{quotemeta($1||'') .$self->_assemble_format($2, \@types) . quotemeta($3||'')}geo;
+    $format =~ s{([^%]*)?%([${handlers}])([^%]*)?}{quotemeta($1||'') .$self->_assemble_format($2, \@types) . quotemeta($3||'')}geo;
     my %types_table = map { $_ => 1 } map {
         my $t = $_;
         $t =~ s/^localized_//;
@@ -179,7 +180,8 @@ sub _assemble_format {
 
     # assemble to regexp
     if ($type eq 'extend') {
-        $val =~ s{([^%]*)?%(.)([^%]*)?}{quotemeta($1||'') .$self->_assemble_format($2, $types) . quotemeta($3||'')}geo;
+        my $handlers = join '', keys %{ $self->{_handler} };
+        $val =~ s{([^%]*)?%([${handlers}])([^%]*)?}{quotemeta($1||'') .$self->_assemble_format($2, $types) . quotemeta($3||'')}geo;
         return $val;
     }
     else {
