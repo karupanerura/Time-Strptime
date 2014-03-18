@@ -248,10 +248,18 @@ sub _gen_calc_offset_src {
 
     my $src = '';
 
+    my $fix_offset = $self->_can_use_fixed_offset($types_table);
+
     my $second = $types_table->{second} ? '$stash{second}' : 0;
     my $minute = $types_table->{minute} ? '$stash{minute}' : 0;
     my $hour   = $self->_gen_calc_hour_src($types_table);
-    if ($types_table->{offset}) {
+    if ($fix_offset) {
+        my $offset = tzoffset_as_epoch(localtime);
+        $src .= sprintf <<'EOD', $offset;
+$offset = %d;
+EOD
+    }
+    elsif ($types_table->{offset}) {
         $src .= <<'EOD';
 $offset = (abs($stash{offset}) == $stash{offset} ? 1 : -1) * (60 * 60 * substr($stash{offset}, 1, 2) + 60 * substr($stash{offset}, 3, 2));
 EOD
@@ -270,7 +278,7 @@ EOD
         die 'unknown case. types: '. join ', ', keys %$types_table;
     }
 
-    $src .= <<'EOD' unless $types_table->{epoch};
+    $src .= <<'EOD' unless $types_table->{epoch} || $fix_offset;
 $epoch -= $offset;
 EOD
 
@@ -290,6 +298,13 @@ EOD
     } else {
         return 0;
     }
+}
+
+sub _can_use_fixed_offset {
+    my ($self, $types_table) = @_;
+    return if $types_table->{offset};
+    return if $types_table->{timezone};
+    return $ENV{TZ} eq 'GMT';
 }
 
 1;
