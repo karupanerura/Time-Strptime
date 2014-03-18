@@ -179,7 +179,7 @@ sub _assemble_format {
 
     # assemble to regexp
     if ($type eq 'extend') {
-        $val =~ s{%(.)}{$self->_assemble_format($1, $types)}ge;
+        $val =~ s{([^%]*)?%(.)([^%]*)?}{quotemeta($1||'') .$self->_assemble_format($2, $types) . quotemeta($3||'')}geo;
         return $val;
     }
     else {
