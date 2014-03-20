@@ -25,32 +25,32 @@ This module allows you to perform better by pre-compile the format by string.
 benchmark:GMT(-0000) `dt=DateTime, ts=Time::Strptime, tp=Time::Piece`
 
     Benchmark: timing 100000 iterations of dt, dt(compiled), tp, ts, ts(compiled)...
-            dt: 44 wallclock secs (43.61 usr +  0.05 sys = 43.66 CPU) @ 2290.43/s (n=100000)
-    dt(compiled): 25 wallclock secs (25.12 usr +  0.03 sys = 25.15 CPU) @ 3976.14/s (n=100000)
-            tp:  1 wallclock secs ( 0.73 usr +  0.00 sys =  0.73 CPU) @ 136986.30/s (n=100000)
-            ts: 30 wallclock secs (30.03 usr +  0.09 sys = 30.12 CPU) @ 3320.05/s (n=100000)
-    ts(compiled):  2 wallclock secs ( 1.69 usr +  0.00 sys =  1.69 CPU) @ 59171.60/s (n=100000)
+            dt: 46 wallclock secs (45.52 usr +  0.02 sys = 45.54 CPU) @ 2195.87/s (n=100000)
+    dt(compiled): 27 wallclock secs (26.75 usr +  0.01 sys = 26.76 CPU) @ 3736.92/s (n=100000)
+            tp:  1 wallclock secs ( 0.76 usr +  0.00 sys =  0.76 CPU) @ 131578.95/s (n=100000)
+            ts: 33 wallclock secs (33.47 usr +  0.05 sys = 33.52 CPU) @ 2983.29/s (n=100000)
+    ts(compiled):  1 wallclock secs ( 1.12 usr +  0.00 sys =  1.12 CPU) @ 89285.71/s (n=100000)
                      Rate         dt         ts dt(compiled) ts(compiled)         tp
-    dt             2290/s         --       -31%         -42%         -96%       -98%
-    ts             3320/s        45%         --         -17%         -94%       -98%
-    dt(compiled)   3976/s        74%        20%           --         -93%       -97%
-    ts(compiled)  59172/s      2483%      1682%        1388%           --       -57%
-    tp           136986/s      5881%      4026%        3345%         132%         --
+    dt             2196/s         --       -26%         -41%         -98%       -98%
+    ts             2983/s        36%         --         -20%         -97%       -98%
+    dt(compiled)   3737/s        70%        25%           --         -96%       -97%
+    ts(compiled)  89286/s      3966%      2893%        2289%           --       -32%
+    tp           131579/s      5892%      4311%        3421%          47%         --
 
 benchmark:Asia/Tokyo(-0900) `dt=DateTime, ts=Time::Strptime, tp=Time::Piece`
 
     Benchmark: timing 100000 iterations of dt, dt(compiled), tp, ts, ts(compiled)...
-            dt: 52 wallclock secs (52.25 usr +  0.07 sys = 52.32 CPU) @ 1911.31/s (n=100000)
-    dt(compiled): 34 wallclock secs (33.05 usr +  0.05 sys = 33.10 CPU) @ 3021.15/s (n=100000)
-            tp:  0 wallclock secs ( 0.81 usr +  0.01 sys =  0.82 CPU) @ 121951.22/s (n=100000)
-            ts: 33 wallclock secs (31.97 usr +  0.11 sys = 32.08 CPU) @ 3117.21/s (n=100000)
-    ts(compiled):  1 wallclock secs ( 1.71 usr +  0.00 sys =  1.71 CPU) @ 58479.53/s (n=100000)
-                     Rate         dt dt(compiled)         ts ts(compiled)         tp
-    dt             1911/s         --         -37%       -39%         -97%       -98%
-    dt(compiled)   3021/s        58%           --        -3%         -95%       -98%
-    ts             3117/s        63%           3%         --         -95%       -97%
-    ts(compiled)  58480/s      2960%        1836%      1776%           --       -52%
-    tp           121951/s      6280%        3937%      3812%         109%         --
+            dt: 53 wallclock secs (53.11 usr +  0.02 sys = 53.13 CPU) @ 1882.18/s (n=100000)
+    dt(compiled): 34 wallclock secs (33.98 usr +  0.02 sys = 34.00 CPU) @ 2941.18/s (n=100000)
+            tp:  1 wallclock secs ( 0.75 usr +  0.00 sys =  0.75 CPU) @ 133333.33/s (n=100000)
+            ts: 39 wallclock secs (38.37 usr +  0.06 sys = 38.43 CPU) @ 2602.13/s (n=100000)
+    ts(compiled):  1 wallclock secs ( 1.81 usr +  0.00 sys =  1.81 CPU) @ 55248.62/s (n=100000)
+                     Rate         dt         ts dt(compiled) ts(compiled)         tp
+    dt             1882/s         --       -28%         -36%         -97%       -99%
+    ts             2602/s        38%         --         -12%         -95%       -98%
+    dt(compiled)   2941/s        56%        13%           --         -95%       -98%
+    ts(compiled)  55249/s      2835%      2023%        1778%           --       -59%
+    tp           133333/s      6984%      5024%        4433%         141%         --
 
 # FAQ
 
