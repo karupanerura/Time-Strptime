@@ -48,6 +48,20 @@ my %TEST_CASE = (
             result => [1388539425, 0],
         },
     ],
+    "20-Mar-2014" => [
+        {
+            format => "%e-%b-%Y",
+            result => [1395273600, 0],
+        },
+        {
+            format => "%d-%b-%Y",
+            result => [1395273600, 0],
+        },
+        {
+            format => "%v",
+            result => [1395273600, 0],
+        },
+    ],
 );
 
 for my $str (keys %TEST_CASE) {

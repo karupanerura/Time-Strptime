@@ -28,7 +28,12 @@ BEGIN {
 
 our %DEFAULT_HANDLER = (
     '%' => [char          => '%' ],
-    A   => [SKIP          => sub { map { decode(locale => $_) } map { strftime('%a', 0, 0, 0, $_, 0, 0), strftime('%A', 0, 0, 0, $_, 0, 0) } 1..7 } ],
+    A   => [SKIP          => sub {
+        map quotemeta, map { decode(locale => $_) } map {
+            strftime('%a', 0, 0, 0, $_, 0, 0),
+            strftime('%A', 0, 0, 0, $_, 0, 0)
+        } 1..7
+    }],
     a   => [extend        => q{%A} ],
     B   => [localed_month => sub {
         my $self = shift;
@@ -36,13 +41,13 @@ our %DEFAULT_HANDLER = (
         unless (exists $self->{format_table}{localed_month}) {
             my %format_table;
             for my $month (1..12) {
-                $format_table{decode(locale => strftime('%b', 0, 0, 0, 1, $_-1, 0))} = $month;
-                $format_table{decode(locale => strftime('%B', 0, 0, 0, 1, $_-1, 0))} = $month;
+                $format_table{decode(locale => strftime('%b', 0, 0, 0, 1, $month-1, 0))} = $month;
+                $format_table{decode(locale => strftime('%B', 0, 0, 0, 1, $month-1, 0))} = $month;
             }
             $self->{format_table}{localed_month} = \%format_table;
         }
 
-        return [keys %{ $self->{format_table}{localed_month} }];
+        return [map quotemeta, keys %{ $self->{format_table}{localed_month} }];
     } ],
     b   => [extend      => q{%B}],
     C   => [SKIP        => q{[0-9]{2}} ],
@@ -126,10 +131,14 @@ sub _compile_format {
     # assemble format to regexp
     my $handlers = join '', keys %{ $self->{_handler} };
     my @types;
-    $format =~ s{([^%]*)?%([${handlers}])([^%]*)?}{quotemeta($1||'') .$self->_assemble_format($2, \@types) . quotemeta($3||'')}geo;
+    $format =~ s{([^%]*)?%([${handlers}])([^%]*)?}{
+        my $prefix = quotemeta($1||'');
+        my $suffix = quotemeta($3||'');
+        $prefix.$self->_assemble_format($2, \@types).$suffix
+    }geo;
     my %types_table = map { $_ => 1 } map {
         my $t = $_;
-        $t =~ s/^localized_//;
+        $t =~ s/^localed_//;
         $t;
     } @types;
 
@@ -179,7 +188,11 @@ sub _assemble_format {
     # assemble to regexp
     if ($type eq 'extend') {
         my $handlers = join '', keys %{ $self->{_handler} };
-        $val =~ s{([^%]*)?%([${handlers}])([^%]*)?}{quotemeta($1||'') .$self->_assemble_format($2, $types) . quotemeta($3||'')}geo;
+        $val =~ s{([^%]*)?%([${handlers}])([^%]*)?}{
+            my $prefix = quotemeta($1||'');
+            my $suffix = quotemeta($3||'');
+            $prefix.$self->_assemble_format($2, $types).$suffix
+        }geo;
         return $val;
     }
     else {
