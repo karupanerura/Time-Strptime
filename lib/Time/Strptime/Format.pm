@@ -4,6 +4,7 @@ use warnings;
 use utf8;
 use integer;
 
+use B;
 use Carp ();
 use Time::Local qw/timelocal timegm/;
 use Encode qw/decode/;
@@ -159,7 +160,7 @@ sub {
         return (\$epoch, \$offset);
     }
     else {
-        Carp::croak "cannot parse datetime. text: '\$_[0]', format: '\%s'";
+        Carp::croak 'cannot parse datetime. text: "'.\$_[0].'", format: '.\%s;
     }
 };
 EOD
@@ -172,7 +173,8 @@ EOD
     $formatter_src .= $self->_gen_calc_epoch_src(\%types_table);
     $formatter_src .= $self->_gen_calc_offset_src(\%types_table);
 
-    my $combined_src = sprintf $parser_src, $formatter_src, $self->{format};
+    my $combined_src = sprintf $parser_src, $formatter_src, B::perlstring(B::perlstring($self->{format}));
+    $self->{perser_src} = $combined_src;
     # warn $combined_src;
 
     my $format_table = $self->{format_table} || {};

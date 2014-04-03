@@ -8,7 +8,7 @@ BEGIN {
     };
 }
 
-use Time::Strptime qw/strptime/;
+use Time::Strptime::Format;
 use Test::More;
 
 my %TEST_CASE = (
@@ -67,7 +67,7 @@ my %TEST_CASE = (
 for my $str (keys %TEST_CASE) {
     subtest "String: $str" => sub {
         for my $wanted (@{ $TEST_CASE{$str} }) {
-            my @result = strptime($wanted->{format}, $str);
+            my @result = Time::Strptime::Format->new($wanted->{format}, { locale => 'C' })->parse($str);
             is_deeply \@result, $wanted->{result}, "Format: $wanted->{format}";
         }
     };
