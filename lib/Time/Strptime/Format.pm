@@ -131,28 +131,29 @@ sub _compile_format {
     my $self = shift;
     my $format = $self->{format};
 
-    # setlocale and tzset
-    my $locale = locale_scope(LC_ALL, $self->{locale});
-    local $ENV{TZ} = $self->{time_zone} if $self->{time_zone};
-    tzset();
+    my $parser = do {
+        # setlocale and tzset
+        my $locale = locale_scope(LC_ALL, $self->{locale});
+        local $ENV{TZ} = $ENV{TZ} || $self->{time_zone} || strftime('%Z', localtime);
+        tzset();
 
-    # assemble format to regexp
-    my $handlers = join '', keys %{ $self->{_handler} };
-    my @types;
-    $format =~ s{([^%]*)?%([${handlers}])([^%]*)?}{
-        my $prefix = quotemeta($1||'');
-        my $suffix = quotemeta($3||'');
-        $prefix.$self->_assemble_format($2, \@types).$suffix
-    }geo;
-    my %types_table = map { $_ => 1 } map {
-        my $t = $_;
-        $t =~ s/^localed_//;
-        $t;
-    } @types;
+        # assemble format to regexp
+        my $handlers = join '', keys %{ $self->{_handler} };
+        my @types;
+        $format =~ s{([^%]*)?%([${handlers}])([^%]*)?}{
+            my $prefix = quotemeta($1||'');
+            my $suffix = quotemeta($3||'');
+            $prefix.$self->_assemble_format($2, \@types).$suffix
+        }geo;
+        my %types_table = map { $_ => 1 } map {
+            my $t = $_;
+            $t =~ s/^localed_//;
+            $t;
+        } @types;
 
-    # generate base src
-    local $" = ' ';
-    my $parser_src = <<EOD;
+        # generate base src
+        local $" = ' ';
+        my $parser_src = <<EOD;
 my (\$epoch, \$offset, \%%stash);
 sub {
     if (\@stash{qw/@types/} = (\$_[0] =~ m{\\A$format\\z}mo)) {
@@ -165,21 +166,24 @@ sub {
 };
 EOD
 
-    # generate formatter src
-    my $formatter_src = '';
-    for my $type (@types) {
-        $formatter_src .= $self->_gen_stash_initialize_src($type);
-    }
-    $formatter_src .= $self->_gen_calc_epoch_src(\%types_table);
-    $formatter_src .= $self->_gen_calc_offset_src(\%types_table);
+        # generate formatter src
+        my $formatter_src = '';
+        for my $type (@types) {
+            $formatter_src .= $self->_gen_stash_initialize_src($type);
+        }
+        $formatter_src .= $self->_gen_calc_epoch_src(\%types_table);
+        $formatter_src .= $self->_gen_calc_offset_src(\%types_table);
 
-    my $combined_src = sprintf $parser_src, $formatter_src, B::perlstring(B::perlstring($self->{format}));
-    $self->{perser_src} = $combined_src;
-    # warn $combined_src;
+        my $combined_src = sprintf $parser_src, $formatter_src, B::perlstring(B::perlstring($self->{format}));
+        $self->{parser_src} = $combined_src;
+        # warn $combined_src;
 
-    my $format_table = $self->{format_table} || {};
-    my $parser = eval $combined_src; ## no critic
+        my $format_table = $self->{format_table} || {};
+        eval $combined_src; ## no critic
+    };
+    tzset();
     die $@ if $@;
+
     return $parser;
 }
 
@@ -276,14 +280,13 @@ sub _gen_calc_offset_src {
 
     my $src = '';
 
-    my $fix_offset = $self->_fixed_offset($types_table, $ENV{TZ});
+    my $fixed_offset = $self->_fixed_offset($types_table, $ENV{TZ});
 
     my $second = $types_table->{second} ? '$stash{second}' : 0;
     my $minute = $types_table->{minute} ? '$stash{minute}' : 0;
     my $hour   = $self->_gen_calc_hour_src($types_table);
-    if ($fix_offset) {
-        my $offset = tzoffset_as_epoch(localtime);
-        $src .= sprintf <<'EOD', $offset;
+    if (defined $fixed_offset) {
+        $src .= sprintf <<'EOD', $fixed_offset;
 $offset = %d;
 EOD
     }
@@ -306,7 +309,7 @@ EOD
         die 'unknown case. types: '. join ', ', keys %$types_table;
     }
 
-    $src .= <<'EOD' unless $types_table->{epoch} || $fix_offset;
+    $src .= <<'EOD' unless $types_table->{epoch} || defined $fixed_offset;
 $epoch -= $offset;
 EOD
 
@@ -338,7 +341,9 @@ sub _fixed_offset {
     my ($self, $types_table, $time_zone) = @_;
     return if $types_table->{offset};
     return if $types_table->{timezone};
-    return defined $time_zone and exists $FIXED_OFFSET{$time_zone} ? $FIXED_OFFSET{$time_zone} : undef;
+    return if not defined $time_zone;
+    return if not exists $FIXED_OFFSET{$time_zone};
+    return $FIXED_OFFSET{$time_zone};
 }
 
 1;
