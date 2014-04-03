@@ -90,6 +90,12 @@ our %DEFAULT_HANDLER = (
     z   => [offset      => q{[-+][0-9]{4}}],
 );
 
+our %FIXED_OFFSET = (
+    GMT => 0,
+    UTC => 0,
+    Z   => 0,
+);
+
 sub new {
     my ($class, $format, $options) = @_;
     $options ||= +{};
@@ -268,7 +274,7 @@ sub _gen_calc_offset_src {
 
     my $src = '';
 
-    my $fix_offset = $self->_can_use_fixed_offset($types_table);
+    my $fix_offset = $self->_fixed_offset($types_table, $ENV{TZ});
 
     my $second = $types_table->{second} ? '$stash{second}' : 0;
     my $minute = $types_table->{minute} ? '$stash{minute}' : 0;
@@ -326,11 +332,11 @@ EOD
     }
 }
 
-sub _can_use_fixed_offset {
-    my ($self, $types_table) = @_;
+sub _fixed_offset {
+    my ($self, $types_table, $time_zone) = @_;
     return if $types_table->{offset};
     return if $types_table->{timezone};
-    return $ENV{TZ} eq 'GMT';
+    return exists $FIXED_OFFSET{$time_zone} ? $FIXED_OFFSET{$time_zone} : undef;
 }
 
 1;
