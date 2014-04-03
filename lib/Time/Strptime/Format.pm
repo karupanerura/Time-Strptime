@@ -2,6 +2,7 @@ package Time::Strptime::Format;
 use strict;
 use warnings;
 use utf8;
+use integer;
 
 use Carp ();
 use Time::Local qw/timelocal timegm/;
@@ -147,7 +148,7 @@ sub _compile_format {
     my $parser_src = <<EOD;
 my (\$epoch, \$offset, \%%stash);
 sub {
-    if (\@stash{qw/@types/} = (\$_[0] =~ m{\\A$format\\z}mso)) {
+    if (\@stash{qw/@types/} = (\$_[0] =~ m{\\A$format\\z}mo)) {
         \%s;
         return (\$epoch, \$offset);
     }
