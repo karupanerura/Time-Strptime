@@ -31,11 +31,12 @@ for my $time_zone (qw|GMT UTC Asia/Tokyo America/Whitehorse|) {
     };
 
     cmpthese timethese 100000 => +{
-        'dt(compiled)' => sub { $dt_parser->parse_datetime($text) },
-        'ts(compiled)' => sub { $ts_parser->parse($text)          },
-        'dt'           => sub { DateTime::Format::Strptime->new(pattern => $pattern, time_zone => $time_zone)->parse_datetime($text) },
-        'ts'           => sub { Time::Strptime::Format->new($pattern)->parse($text)                                                  },
-        'tp'           => sub { $tp_parser->strptime($text, $pattern) },
+        'dt(cached)' => sub { $dt_parser->parse_datetime($text) },
+        'ts(cached)' => sub { $ts_parser->parse($text)          },
+        'tp(cached)' => sub { $tp_parser->strptime($text, $pattern) },
+        'dt'         => sub { DateTime::Format::Strptime->new(pattern => $pattern, time_zone => $time_zone)->parse_datetime($text) },
+        'ts'         => sub { Time::Strptime::Format->new($pattern)->parse($text)                                                  },
+        'tp'         => sub { Time::Piece->localtime->strptime($text, $pattern) },
     };
 }
 
@@ -46,67 +47,75 @@ __END__
     ok 2
     1..2
 ok 1 - GMT(+0000)
-Benchmark: timing 100000 iterations of dt, dt(compiled), tp, ts, ts(compiled)...
-        dt: 46 wallclock secs (45.52 usr +  0.02 sys = 45.54 CPU) @ 2195.87/s (n=100000)
-dt(compiled): 27 wallclock secs (26.75 usr +  0.01 sys = 26.76 CPU) @ 3736.92/s (n=100000)
-        tp:  1 wallclock secs ( 0.76 usr +  0.00 sys =  0.76 CPU) @ 131578.95/s (n=100000)
-        ts: 33 wallclock secs (33.47 usr +  0.05 sys = 33.52 CPU) @ 2983.29/s (n=100000)
-ts(compiled):  1 wallclock secs ( 1.12 usr +  0.00 sys =  1.12 CPU) @ 89285.71/s (n=100000)
-                 Rate         dt         ts dt(compiled) ts(compiled)         tp
-dt             2196/s         --       -26%         -41%         -98%       -98%
-ts             2983/s        36%         --         -20%         -97%       -98%
-dt(compiled)   3737/s        70%        25%           --         -96%       -97%
-ts(compiled)  89286/s      3966%      2893%        2289%           --       -32%
-tp           131579/s      5892%      4311%        3421%          47%         --
+Benchmark: timing 100000 iterations of dt, dt(cached), tp, tp(cached), ts, ts(cached)...
+        dt: 47 wallclock secs (46.43 usr +  0.09 sys = 46.52 CPU) @ 2149.61/s (n=100000)
+dt(cached): 27 wallclock secs (27.22 usr +  0.05 sys = 27.27 CPU) @ 3667.03/s (n=100000)
+        tp:  2 wallclock secs ( 1.62 usr +  0.00 sys =  1.62 CPU) @ 61728.40/s (n=100000)
+tp(cached):  1 wallclock secs ( 0.96 usr +  0.01 sys =  0.97 CPU) @ 103092.78/s (n=100000)
+        ts: 34 wallclock secs (34.09 usr +  0.11 sys = 34.20 CPU) @ 2923.98/s (n=100000)
+ts(cached):  1 wallclock secs ( 1.12 usr +  0.00 sys =  1.12 CPU) @ 89285.71/s (n=100000)
+               Rate       dt       ts dt(cached)        tp ts(cached) tp(cached)
+dt           2150/s       --     -26%       -41%      -97%       -98%       -98%
+ts           2924/s      36%       --       -20%      -95%       -97%       -97%
+dt(cached)   3667/s      71%      25%         --      -94%       -96%       -96%
+tp          61728/s    2772%    2011%      1583%        --       -31%       -40%
+ts(cached)  89286/s    4054%    2954%      2335%       45%         --       -13%
+tp(cached) 103093/s    4696%    3426%      2711%       67%        15%         --
     # Subtest: UTC(+0000)
     ok 1
     ok 2
     1..2
 ok 2 - UTC(+0000)
-Benchmark: timing 100000 iterations of dt, dt(compiled), tp, ts, ts(compiled)...
-        dt: 45 wallclock secs (44.81 usr +  0.02 sys = 44.83 CPU) @ 2230.65/s (n=100000)
-dt(compiled): 27 wallclock secs (26.58 usr +  0.01 sys = 26.59 CPU) @ 3760.81/s (n=100000)
-        tp:  1 wallclock secs ( 0.76 usr +  0.00 sys =  0.76 CPU) @ 131578.95/s (n=100000)
-        ts: 38 wallclock secs (38.34 usr +  0.06 sys = 38.40 CPU) @ 2604.17/s (n=100000)
-ts(compiled):  2 wallclock secs ( 1.78 usr +  0.00 sys =  1.78 CPU) @ 56179.78/s (n=100000)
-                 Rate         dt         ts dt(compiled) ts(compiled)         tp
-dt             2231/s         --       -14%         -41%         -96%       -98%
-ts             2604/s        17%         --         -31%         -95%       -98%
-dt(compiled)   3761/s        69%        44%           --         -93%       -97%
-ts(compiled)  56180/s      2419%      2057%        1394%           --       -57%
-tp           131579/s      5799%      4953%        3399%         134%         --
+Benchmark: timing 100000 iterations of dt, dt(cached), tp, tp(cached), ts, ts(cached)...
+        dt: 47 wallclock secs (46.49 usr +  0.08 sys = 46.57 CPU) @ 2147.31/s (n=100000)
+dt(cached): 27 wallclock secs (26.62 usr +  0.05 sys = 26.67 CPU) @ 3749.53/s (n=100000)
+        tp:  1 wallclock secs ( 1.64 usr +  0.00 sys =  1.64 CPU) @ 60975.61/s (n=100000)
+tp(cached):  1 wallclock secs ( 0.81 usr +  0.00 sys =  0.81 CPU) @ 123456.79/s (n=100000)
+        ts: 34 wallclock secs (33.53 usr +  0.11 sys = 33.64 CPU) @ 2972.65/s (n=100000)
+ts(cached):  1 wallclock secs ( 1.13 usr +  0.00 sys =  1.13 CPU) @ 88495.58/s (n=100000)
+               Rate       dt       ts dt(cached)        tp ts(cached) tp(cached)
+dt           2147/s       --     -28%       -43%      -96%       -98%       -98%
+ts           2973/s      38%       --       -21%      -95%       -97%       -98%
+dt(cached)   3750/s      75%      26%         --      -94%       -96%       -97%
+tp          60976/s    2740%    1951%      1526%        --       -31%       -51%
+ts(cached)  88496/s    4021%    2877%      2260%       45%         --       -28%
+tp(cached) 123457/s    5649%    4053%      3193%      102%        40%         --
     # Subtest: Asia/Tokyo(+0900)
     ok 1
     ok 2
     1..2
 ok 3 - Asia/Tokyo(+0900)
-Benchmark: timing 100000 iterations of dt, dt(compiled), tp, ts, ts(compiled)...
-        dt: 53 wallclock secs (53.11 usr +  0.02 sys = 53.13 CPU) @ 1882.18/s (n=100000)
-dt(compiled): 34 wallclock secs (33.98 usr +  0.02 sys = 34.00 CPU) @ 2941.18/s (n=100000)
-        tp:  1 wallclock secs ( 0.75 usr +  0.00 sys =  0.75 CPU) @ 133333.33/s (n=100000)
-        ts: 39 wallclock secs (38.37 usr +  0.06 sys = 38.43 CPU) @ 2602.13/s (n=100000)
-ts(compiled):  1 wallclock secs ( 1.81 usr +  0.00 sys =  1.81 CPU) @ 55248.62/s (n=100000)
-                 Rate         dt         ts dt(compiled) ts(compiled)         tp
-dt             1882/s         --       -28%         -36%         -97%       -99%
-ts             2602/s        38%         --         -12%         -95%       -98%
-dt(compiled)   2941/s        56%        13%           --         -95%       -98%
-ts(compiled)  55249/s      2835%      2023%        1778%           --       -59%
-tp           133333/s      6984%      5024%        4433%         141%         --
+Benchmark: timing 100000 iterations of dt, dt(cached), tp, tp(cached), ts, ts(cached)...
+        dt: 55 wallclock secs (54.70 usr +  0.11 sys = 54.81 CPU) @ 1824.48/s (n=100000)
+dt(cached): 34 wallclock secs (33.92 usr +  0.06 sys = 33.98 CPU) @ 2942.91/s (n=100000)
+        tp:  2 wallclock secs ( 1.61 usr +  0.01 sys =  1.62 CPU) @ 61728.40/s (n=100000)
+tp(cached):  1 wallclock secs ( 0.79 usr +  0.00 sys =  0.79 CPU) @ 126582.28/s (n=100000)
+        ts: 39 wallclock secs (39.50 usr +  0.13 sys = 39.63 CPU) @ 2523.34/s (n=100000)
+ts(cached):  2 wallclock secs ( 1.79 usr +  0.01 sys =  1.80 CPU) @ 55555.56/s (n=100000)
+               Rate       dt       ts dt(cached) ts(cached)        tp tp(cached)
+dt           1824/s       --     -28%       -38%       -97%      -97%       -99%
+ts           2523/s      38%       --       -14%       -95%      -96%       -98%
+dt(cached)   2943/s      61%      17%         --       -95%      -95%       -98%
+ts(cached)  55556/s    2945%    2102%      1788%         --      -10%       -56%
+tp          61728/s    3283%    2346%      1998%        11%        --       -51%
+tp(cached) 126582/s    6838%    4916%      4201%       128%      105%         --
     # Subtest: America/Whitehorse(-0700)
     ok 1
     ok 2
     1..2
 ok 4 - America/Whitehorse(-0700)
-Benchmark: timing 100000 iterations of dt, dt(compiled), tp, ts, ts(compiled)...
-        dt: 55 wallclock secs (54.86 usr +  0.03 sys = 54.89 CPU) @ 1821.83/s (n=100000)
-dt(compiled): 36 wallclock secs (35.35 usr +  0.01 sys = 35.36 CPU) @ 2828.05/s (n=100000)
-        tp:  1 wallclock secs ( 0.75 usr +  0.00 sys =  0.75 CPU) @ 133333.33/s (n=100000)
-        ts: 38 wallclock secs (38.43 usr +  0.06 sys = 38.49 CPU) @ 2598.08/s (n=100000)
-ts(compiled):  2 wallclock secs ( 2.11 usr +  0.00 sys =  2.11 CPU) @ 47393.36/s (n=100000)
-                 Rate         dt         ts dt(compiled) ts(compiled)         tp
-dt             1822/s         --       -30%         -36%         -96%       -99%
-ts             2598/s        43%         --          -8%         -95%       -98%
-dt(compiled)   2828/s        55%         9%           --         -94%       -98%
-ts(compiled)  47393/s      2501%      1724%        1576%           --       -64%
-tp           133333/s      7219%      5032%        4615%         181%         --
+Benchmark: timing 100000 iterations of dt, dt(cached), tp, tp(cached), ts, ts(cached)...
+        dt: 57 wallclock secs (56.63 usr +  0.11 sys = 56.74 CPU) @ 1762.43/s (n=100000)
+dt(cached): 36 wallclock secs (35.81 usr +  0.06 sys = 35.87 CPU) @ 2787.84/s (n=100000)
+        tp:  2 wallclock secs ( 1.67 usr +  0.01 sys =  1.68 CPU) @ 59523.81/s (n=100000)
+tp(cached):  1 wallclock secs ( 0.80 usr +  0.00 sys =  0.80 CPU) @ 125000.00/s (n=100000)
+        ts: 40 wallclock secs (40.52 usr +  0.14 sys = 40.66 CPU) @ 2459.42/s (n=100000)
+ts(cached):  3 wallclock secs ( 2.06 usr +  0.01 sys =  2.07 CPU) @ 48309.18/s (n=100000)
+               Rate       dt       ts dt(cached) ts(cached)        tp tp(cached)
+dt           1762/s       --     -28%       -37%       -96%      -97%       -99%
+ts           2459/s      40%       --       -12%       -95%      -96%       -98%
+dt(cached)   2788/s      58%      13%         --       -94%      -95%       -98%
+ts(cached)  48309/s    2641%    1864%      1633%         --      -19%       -61%
+tp          59524/s    3277%    2320%      2035%        23%        --       -52%
+tp(cached) 125000/s    6992%    4982%      4384%       159%      110%         --
 1..4
