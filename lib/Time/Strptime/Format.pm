@@ -102,8 +102,8 @@ sub new {
 
     my $self = bless +{
         format    => $format,
-        time_zone => $options->{time_zone} || $ENV{TZ} || strftime('%Z', localtime) || 'GMT',
-        locale    => $options->{locale}    || 'C',
+        time_zone => $options->{time_zone},
+        locale    => $options->{locale} || 'C',
         _handler  => +{
             %DEFAULT_HANDLER,
             %{ $options->{handler} || {} },
@@ -132,7 +132,7 @@ sub _compile_format {
 
     # setlocale and tzset
     my $locale = locale_scope(LC_ALL, $self->{locale});
-    local $ENV{TZ} = $self->{time_zone};
+    local $ENV{TZ} = $self->{time_zone} if $self->{time_zone};
     tzset();
 
     # assemble format to regexp
