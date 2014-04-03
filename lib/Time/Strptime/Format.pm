@@ -336,7 +336,7 @@ sub _fixed_offset {
     my ($self, $types_table, $time_zone) = @_;
     return if $types_table->{offset};
     return if $types_table->{timezone};
-    return exists $FIXED_OFFSET{$time_zone} ? $FIXED_OFFSET{$time_zone} : undef;
+    return defined $time_zone and exists $FIXED_OFFSET{$time_zone} ? $FIXED_OFFSET{$time_zone} : undef;
 }
 
 1;
