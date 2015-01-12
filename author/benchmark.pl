@@ -48,74 +48,74 @@ __END__
     1..2
 ok 1 - GMT(+0000)
 Benchmark: timing 100000 iterations of dt, dt(cached), tp, tp(cached), ts, ts(cached)...
-        dt: 47 wallclock secs (46.43 usr +  0.09 sys = 46.52 CPU) @ 2149.61/s (n=100000)
-dt(cached): 27 wallclock secs (27.22 usr +  0.05 sys = 27.27 CPU) @ 3667.03/s (n=100000)
-        tp:  2 wallclock secs ( 1.62 usr +  0.00 sys =  1.62 CPU) @ 61728.40/s (n=100000)
-tp(cached):  1 wallclock secs ( 0.96 usr +  0.01 sys =  0.97 CPU) @ 103092.78/s (n=100000)
-        ts: 34 wallclock secs (34.09 usr +  0.11 sys = 34.20 CPU) @ 2923.98/s (n=100000)
-ts(cached):  1 wallclock secs ( 1.12 usr +  0.00 sys =  1.12 CPU) @ 89285.71/s (n=100000)
+        dt: 37 wallclock secs (36.29 usr +  0.12 sys = 36.41 CPU) @ 2746.50/s (n=100000)
+dt(cached): 20 wallclock secs (20.66 usr +  0.07 sys = 20.73 CPU) @ 4823.93/s (n=100000)
+        tp:  0 wallclock secs ( 0.91 usr +  0.01 sys =  0.92 CPU) @ 108695.65/s (n=100000)
+tp(cached):  1 wallclock secs ( 0.46 usr +  0.00 sys =  0.46 CPU) @ 217391.30/s (n=100000)
+        ts: 28 wallclock secs (28.13 usr +  0.17 sys = 28.30 CPU) @ 3533.57/s (n=100000)
+ts(cached):  1 wallclock secs ( 0.68 usr +  0.01 sys =  0.69 CPU) @ 144927.54/s (n=100000)
                Rate       dt       ts dt(cached)        tp ts(cached) tp(cached)
-dt           2150/s       --     -26%       -41%      -97%       -98%       -98%
-ts           2924/s      36%       --       -20%      -95%       -97%       -97%
-dt(cached)   3667/s      71%      25%         --      -94%       -96%       -96%
-tp          61728/s    2772%    2011%      1583%        --       -31%       -40%
-ts(cached)  89286/s    4054%    2954%      2335%       45%         --       -13%
-tp(cached) 103093/s    4696%    3426%      2711%       67%        15%         --
+dt           2746/s       --     -22%       -43%      -97%       -98%       -99%
+ts           3534/s      29%       --       -27%      -97%       -98%       -98%
+dt(cached)   4824/s      76%      37%         --      -96%       -97%       -98%
+tp         108696/s    3858%    2976%      2153%        --       -25%       -50%
+ts(cached) 144928/s    5177%    4001%      2904%       33%         --       -33%
+tp(cached) 217391/s    7815%    6052%      4407%      100%        50%         --
     # Subtest: UTC(+0000)
     ok 1
     ok 2
     1..2
 ok 2 - UTC(+0000)
 Benchmark: timing 100000 iterations of dt, dt(cached), tp, tp(cached), ts, ts(cached)...
-        dt: 47 wallclock secs (46.49 usr +  0.08 sys = 46.57 CPU) @ 2147.31/s (n=100000)
-dt(cached): 27 wallclock secs (26.62 usr +  0.05 sys = 26.67 CPU) @ 3749.53/s (n=100000)
-        tp:  1 wallclock secs ( 1.64 usr +  0.00 sys =  1.64 CPU) @ 60975.61/s (n=100000)
-tp(cached):  1 wallclock secs ( 0.81 usr +  0.00 sys =  0.81 CPU) @ 123456.79/s (n=100000)
-        ts: 34 wallclock secs (33.53 usr +  0.11 sys = 33.64 CPU) @ 2972.65/s (n=100000)
-ts(cached):  1 wallclock secs ( 1.13 usr +  0.00 sys =  1.13 CPU) @ 88495.58/s (n=100000)
+        dt: 37 wallclock secs (36.91 usr +  0.13 sys = 37.04 CPU) @ 2699.78/s (n=100000)
+dt(cached): 20 wallclock secs (21.26 usr +  0.07 sys = 21.33 CPU) @ 4688.23/s (n=100000)
+        tp:  1 wallclock secs ( 0.91 usr +  0.01 sys =  0.92 CPU) @ 108695.65/s (n=100000)
+tp(cached):  0 wallclock secs ( 0.44 usr +  0.00 sys =  0.44 CPU) @ 227272.73/s (n=100000)
+        ts: 29 wallclock secs (28.03 usr +  0.17 sys = 28.20 CPU) @ 3546.10/s (n=100000)
+ts(cached):  1 wallclock secs ( 0.67 usr +  0.01 sys =  0.68 CPU) @ 147058.82/s (n=100000)
                Rate       dt       ts dt(cached)        tp ts(cached) tp(cached)
-dt           2147/s       --     -28%       -43%      -96%       -98%       -98%
-ts           2973/s      38%       --       -21%      -95%       -97%       -98%
-dt(cached)   3750/s      75%      26%         --      -94%       -96%       -97%
-tp          60976/s    2740%    1951%      1526%        --       -31%       -51%
-ts(cached)  88496/s    4021%    2877%      2260%       45%         --       -28%
-tp(cached) 123457/s    5649%    4053%      3193%      102%        40%         --
+dt           2700/s       --     -24%       -42%      -98%       -98%       -99%
+ts           3546/s      31%       --       -24%      -97%       -98%       -98%
+dt(cached)   4688/s      74%      32%         --      -96%       -97%       -98%
+tp         108696/s    3926%    2965%      2218%        --       -26%       -52%
+ts(cached) 147059/s    5347%    4047%      3037%       35%         --       -35%
+tp(cached) 227273/s    8318%    6309%      4748%      109%        55%         --
     # Subtest: Asia/Tokyo(+0900)
     ok 1
     ok 2
     1..2
 ok 3 - Asia/Tokyo(+0900)
 Benchmark: timing 100000 iterations of dt, dt(cached), tp, tp(cached), ts, ts(cached)...
-        dt: 55 wallclock secs (54.70 usr +  0.11 sys = 54.81 CPU) @ 1824.48/s (n=100000)
-dt(cached): 34 wallclock secs (33.92 usr +  0.06 sys = 33.98 CPU) @ 2942.91/s (n=100000)
-        tp:  2 wallclock secs ( 1.61 usr +  0.01 sys =  1.62 CPU) @ 61728.40/s (n=100000)
-tp(cached):  1 wallclock secs ( 0.79 usr +  0.00 sys =  0.79 CPU) @ 126582.28/s (n=100000)
-        ts: 39 wallclock secs (39.50 usr +  0.13 sys = 39.63 CPU) @ 2523.34/s (n=100000)
-ts(cached):  2 wallclock secs ( 1.79 usr +  0.01 sys =  1.80 CPU) @ 55555.56/s (n=100000)
+        dt: 43 wallclock secs (43.40 usr +  0.15 sys = 43.55 CPU) @ 2296.21/s (n=100000)
+dt(cached): 28 wallclock secs (27.09 usr +  0.09 sys = 27.18 CPU) @ 3679.18/s (n=100000)
+        tp:  1 wallclock secs ( 0.95 usr +  0.01 sys =  0.96 CPU) @ 104166.67/s (n=100000)
+tp(cached):  0 wallclock secs ( 0.43 usr +  0.00 sys =  0.43 CPU) @ 232558.14/s (n=100000)
+        ts: 34 wallclock secs (33.48 usr +  0.18 sys = 33.66 CPU) @ 2970.89/s (n=100000)
+ts(cached):  1 wallclock secs ( 1.05 usr +  0.00 sys =  1.05 CPU) @ 95238.10/s (n=100000)
                Rate       dt       ts dt(cached) ts(cached)        tp tp(cached)
-dt           1824/s       --     -28%       -38%       -97%      -97%       -99%
-ts           2523/s      38%       --       -14%       -95%      -96%       -98%
-dt(cached)   2943/s      61%      17%         --       -95%      -95%       -98%
-ts(cached)  55556/s    2945%    2102%      1788%         --      -10%       -56%
-tp          61728/s    3283%    2346%      1998%        11%        --       -51%
-tp(cached) 126582/s    6838%    4916%      4201%       128%      105%         --
-    # Subtest: America/Whitehorse(-0700)
+dt           2296/s       --     -23%       -38%       -98%      -98%       -99%
+ts           2971/s      29%       --       -19%       -97%      -97%       -99%
+dt(cached)   3679/s      60%      24%         --       -96%      -96%       -98%
+ts(cached)  95238/s    4048%    3106%      2489%         --       -9%       -59%
+tp         104167/s    4436%    3406%      2731%         9%        --       -55%
+tp(cached) 232558/s   10028%    7728%      6221%       144%      123%         --
+    # Subtest: America/Whitehorse(-0800)
     ok 1
     ok 2
     1..2
-ok 4 - America/Whitehorse(-0700)
+ok 4 - America/Whitehorse(-0800)
 Benchmark: timing 100000 iterations of dt, dt(cached), tp, tp(cached), ts, ts(cached)...
-        dt: 57 wallclock secs (56.63 usr +  0.11 sys = 56.74 CPU) @ 1762.43/s (n=100000)
-dt(cached): 36 wallclock secs (35.81 usr +  0.06 sys = 35.87 CPU) @ 2787.84/s (n=100000)
-        tp:  2 wallclock secs ( 1.67 usr +  0.01 sys =  1.68 CPU) @ 59523.81/s (n=100000)
-tp(cached):  1 wallclock secs ( 0.80 usr +  0.00 sys =  0.80 CPU) @ 125000.00/s (n=100000)
-        ts: 40 wallclock secs (40.52 usr +  0.14 sys = 40.66 CPU) @ 2459.42/s (n=100000)
-ts(cached):  3 wallclock secs ( 2.06 usr +  0.01 sys =  2.07 CPU) @ 48309.18/s (n=100000)
+        dt: 45 wallclock secs (44.85 usr +  0.14 sys = 44.99 CPU) @ 2222.72/s (n=100000)
+dt(cached): 29 wallclock secs (28.48 usr +  0.09 sys = 28.57 CPU) @ 3500.18/s (n=100000)
+        tp:  1 wallclock secs ( 0.95 usr +  0.01 sys =  0.96 CPU) @ 104166.67/s (n=100000)
+tp(cached):  1 wallclock secs ( 0.43 usr +  0.00 sys =  0.43 CPU) @ 232558.14/s (n=100000)
+        ts: 34 wallclock secs (34.27 usr +  0.18 sys = 34.45 CPU) @ 2902.76/s (n=100000)
+ts(cached):  1 wallclock secs ( 1.11 usr +  0.00 sys =  1.11 CPU) @ 90090.09/s (n=100000)
                Rate       dt       ts dt(cached) ts(cached)        tp tp(cached)
-dt           1762/s       --     -28%       -37%       -96%      -97%       -99%
-ts           2459/s      40%       --       -12%       -95%      -96%       -98%
-dt(cached)   2788/s      58%      13%         --       -94%      -95%       -98%
-ts(cached)  48309/s    2641%    1864%      1633%         --      -19%       -61%
-tp          59524/s    3277%    2320%      2035%        23%        --       -52%
-tp(cached) 125000/s    6992%    4982%      4384%       159%      110%         --
+dt           2223/s       --     -23%       -36%       -98%      -98%       -99%
+ts           2903/s      31%       --       -17%       -97%      -97%       -99%
+dt(cached)   3500/s      57%      21%         --       -96%      -97%       -98%
+ts(cached)  90090/s    3953%    3004%      2474%         --      -14%       -61%
+tp         104167/s    4586%    3489%      2876%        16%        --       -55%
+tp(cached) 232558/s   10363%    7912%      6544%       158%      123%         --
 1..4
