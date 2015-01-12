@@ -6,7 +6,7 @@ use integer;
 
 use B;
 use Carp ();
-use Time::Local qw/timelocal timegm/;
+use Time::Local qw/timelocal_nocheck timegm_nocheck/;
 use Encode qw/decode/;
 use Encode::Locale;
 use Locale::Scope qw/locale_scope/;
@@ -15,17 +15,9 @@ use POSIX qw/tzset strftime LC_ALL/;
 our $VERSION = 0.01;
 
 BEGIN {
-    if (eval { require Time::TZOffset; 1 }) {
-        *tzoffset_as_epoch = sub {
-            my $offset = Time::TZOffset::tzoffset(@_);
-            return (abs($offset) == $offset ? 1 : -1) * (60 * 60 * substr($offset, 1, 2) + 60 * substr($offset, 3, 2));
-        };
-    }
-    else {
-        *tzoffset_as_epoch = sub {
-            return timelocal(@_) - timegm(@_);
-        };
-    }
+    local $@;
+    eval "use Time::TZOffset 0.04 qw/tzoffset_as_seconds/";
+    *tzoffset_as_seconds = sub { timegm_nocheck(@_) - timelocal_nocheck(@_) } if $@;
 }
 
 our %DEFAULT_HANDLER = (
@@ -119,7 +111,7 @@ sub new {
 
 sub parse {
     my $self = shift;
-    return $self->_parser->(@_);
+    goto &{ $self->_parser };
 }
 
 sub _parser {
@@ -156,7 +148,7 @@ sub _compile_format {
         my $parser_src = <<EOD;
 my (\$epoch, \$offset, \%%stash);
 sub {
-    if (\@stash{qw/@types/} = (\$_[0] =~ m{\\A$format\\z}mo)) {
+    if (\@stash{qw/@types/} = \$_[0] =~ m{\\A$format\\z}mo) {
         \%s;
         return (\$epoch, \$offset);
     }
@@ -254,12 +246,12 @@ EOD
     }
     elsif ($types_table->{year} && $types_table->{month} && $types_table->{day}) {
         $src .= <<EOD;
-\$epoch = timegm($second, $minute, $hour, \$stash{day}, \$stash{month} - 1, \$stash{year} - 1900);
+\$epoch = timegm_nocheck($second, $minute, $hour, \$stash{day}, \$stash{month} - 1, \$stash{year} - 1900);
 EOD
     }
     elsif ($types_table->{year} && $types_table->{day365}) {
         $src .= <<EOD;
-\$epoch = timegm($second, $minute, $hour, 1, 0, \$stash{year} - 1900) + \$stash{day365} * 60 * 60 * 24;
+\$epoch = timegm_nocheck($second, $minute, $hour, 1, 0, \$stash{year} - 1900) + \$stash{day365} * 60 * 60 * 24;
 EOD
     }
     else {
@@ -297,12 +289,12 @@ EOD
     }
     elsif ($types_table->{year} && $types_table->{month} && $types_table->{day}) {
         $src .= <<EOD;
-\$offset = tzoffset_as_epoch($second, $minute, $hour, \$stash{day}, \$stash{month} - 1, \$stash{year} - 1900);
+\$offset = tzoffset_as_seconds($second, $minute, $hour, \$stash{day}, \$stash{month} - 1, \$stash{year} - 1900);
 EOD
     }
     elsif ($types_table->{year} && $types_table->{day365}) {
         $src .= <<EOD;
-\$offset = tzoffset_as_epoch($second, $minute, $hour, 1, 0, \$stash{year} - 1900);
+\$offset = tzoffset_as_seconds($second, $minute, $hour, 1, 0, \$stash{year} - 1900);
 EOD
     }
     else {
