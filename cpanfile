@@ -5,7 +5,7 @@ requires 'Time::Local';
 requires 'parent';
 requires 'perl', '5.008005';
 
-recommends 'Time::TZOffset';
+recommends 'Time::TZOffset', '0.04';
 
 on configure => sub {
     requires 'CPAN::Meta';

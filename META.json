@@ -48,7 +48,7 @@
       },
       "runtime" : {
          "recommends" : {
-            "Time::TZOffset" : "0"
+            "Time::TZOffset" : "0.04"
          },
          "requires" : {
             "Encode" : "0",
