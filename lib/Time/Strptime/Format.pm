@@ -12,7 +12,7 @@ use Encode::Locale;
 use Locale::Scope qw/locale_scope/;
 use POSIX qw/tzset strftime LC_ALL/;
 
-our $VERSION = 0.01;
+our $VERSION = 0.01_1;
 
 BEGIN {
     local $@;
