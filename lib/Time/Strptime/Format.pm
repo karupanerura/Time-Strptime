@@ -33,7 +33,7 @@ our %DEFAULT_HANDLER = (
     }],
     a   => [extend        => q{%A} ],
     B   => [localed_month => sub {
-        \my ($self) = \(@_);
+        \my ($self) = \$_[0];
 
         unless (exists $self->{format_table}{localed_month}) {
             my %format_table;
@@ -112,18 +112,15 @@ sub new {
     return $self;
 }
 
-sub parse {
-    \my ($self) = \(shift);
-    goto \&{ $self->_parser };
-}
+sub parse { goto &{ shift->_parser } }
 
 sub _parser {
-    \my ($self) = \(@_);
+    \my ($self) = \$_[0];
     return $self->{_parser} ||= $self->_compile_format;
 }
 
 sub _compile_format {
-    \my ($self) = \(@_);
+    \my ($self) = \$_[0];
     my $format = $self->{format};
 
     my $parser = do {
@@ -183,7 +180,7 @@ EOD
 }
 
 sub _assemble_format {
-    \my ($self, $c, $types) = \(@_);
+    \my ($self, $c, $types) = \($_[0], $_[1], $_[2]);
     my ($type, $val) = @{ $self->{_handler}->{$c} };
     die "unsupported: \%$c. patches welcome :)" if $type eq 'UNSUPPORTED';
 
@@ -214,7 +211,7 @@ sub _assemble_format {
 }
 
 sub _gen_stash_initialize_src {
-    \my ($self, $type) = \(@_);
+    \my ($self, $type) = \($_[0], $_[1]);
 
     if ($type eq 'timezone') {
         return <<'EOD';
@@ -233,7 +230,7 @@ EOD
 }
 
 sub _gen_calc_epoch_src {
-    \my ($self, $types_table) = \(@_);
+    \my ($self, $types_table) = \($_[0], $_[1]);
 
     my $src = '';
 
@@ -271,7 +268,7 @@ EOD
 }
 
 sub _gen_calc_offset_src {
-    \my ($self, $types_table) = \(@_);
+    \my ($self, $types_table) = \($_[0], $_[1]);
 
     my $src = '';
 
@@ -318,7 +315,7 @@ EOD
 }
 
 sub _gen_calc_hour_src {
-    \my ($self, $types_table) = \(@_);
+    \my ($self, $types_table) = \($_[0], $_[1]);
 
     if ($types_table->{hour24}) {
         return '$stash{hour24}';
@@ -333,7 +330,7 @@ EOD
 }
 
 sub _fixed_offset {
-    \my ($self, $types_table, $time_zone) = \(@_);
+    \my ($self, $types_table, $time_zone) = \($_[0], $_[1], $_[2]);
     return if $types_table->{offset};
     return if $types_table->{timezone};
     return if not defined $time_zone;

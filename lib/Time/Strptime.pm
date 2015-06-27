@@ -16,7 +16,7 @@ no warnings qw/experimental::refaliasing/;
 
 my %instance_cache;
 sub strptime {
-    \my ($format_text, $date_text) = \(@_);
+    \my ($format_text, $date_text) = \($_[0], $_[1]);
 
     local $Carp::CarpLevel = $Carp::CarpLevel + 1;
     my $format = $instance_cache{$format_text} ||= Time::Strptime::Format->new($format_text);
