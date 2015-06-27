@@ -3,7 +3,7 @@ requires 'Encode::Locale';
 requires 'Locale::Scope';
 requires 'Time::Local';
 requires 'parent';
-requires 'perl', '5.008005';
+requires 'perl', '5.022000';
 
 recommends 'Time::TZOffset', '0.04';
 

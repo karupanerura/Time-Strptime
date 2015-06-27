@@ -1,5 +1,5 @@
 package Time::Strptime;
-use 5.008005;
+use 5.022000;
 use strict;
 use warnings;
 
@@ -11,9 +11,12 @@ our @EXPORT_OK = qw/strptime/;
 use Carp ();
 use Time::Strptime::Format;
 
+use feature qw/refaliasing/;
+no warnings qw/experimental::refaliasing/;
+
 my %instance_cache;
 sub strptime {
-    my ($format_text, $date_text) = @_;
+    \my ($format_text, $date_text) = \(@_);
 
     local $Carp::CarpLevel = $Carp::CarpLevel + 1;
     my $format = $instance_cache{$format_text} ||= Time::Strptime::Format->new($format_text);
