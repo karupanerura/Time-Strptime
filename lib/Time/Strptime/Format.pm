@@ -24,9 +24,9 @@ BEGIN {
 our %DEFAULT_HANDLER = (
     '%' => [char          => '%' ],
     A   => [SKIP          => sub {
-        map quotemeta, map { decode(locale => $_) } map {
+        map quotemeta, map { ($_, substr $_, 0, 3) } map { decode(locale => $_) } map {
             strftime('%a', 0, 0, 0, $_, 0, 0),
-            strftime('%A', 0, 0, 0, $_, 0, 0)
+                strftime('%A', 0, 0, 0, $_, 0, 0)
         } 1..7
     }],
     a   => [extend        => q{%A} ],
@@ -39,13 +39,14 @@ our %DEFAULT_HANDLER = (
                 $format_table{decode(locale => strftime('%b', 0, 0, 0, 1, $month-1, 0))} = $month;
                 $format_table{decode(locale => strftime('%B', 0, 0, 0, 1, $month-1, 0))} = $month;
             }
+            $format_table{substr($_, 0, 3)} = $format_table{$_} for keys %format_table;
             $self->{format_table}{localed_month} = \%format_table;
         }
 
         return [map quotemeta, keys %{ $self->{format_table}{localed_month} }];
     } ],
     b   => [extend      => q{%B}],
-    C   => [SKIP        => q{[0-9]{2}} ],
+    C   => ['UNSUPPORTED'],
     c   => ['UNSUPPORTED'],
     D   => [extend      => q{%m/%d/%Y}                    ],
     d   => [day         => ['0[1-9]','[12][0-9]','3[01]'] ],
