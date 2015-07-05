@@ -10,6 +10,7 @@ use Time::Local qw/timelocal_nocheck timegm_nocheck/;
 use Encode qw/decode/;
 use Encode::Locale;
 use Locale::Scope qw/locale_scope/;
+use List::MoreUtils qw/uniq/;
 use POSIX qw/tzset strftime LC_ALL/;
 
 our $VERSION = 0.01_1;
@@ -143,12 +144,20 @@ sub _compile_format {
             $t;
         } @types;
 
+        # define vars
+        my $vars = join ', ', uniq map { '$'.$_ } map {
+            my $t = $_;
+            $t =~ s/^localed_// ? ($_, $t) : $_;
+        } @types, 'offset', 'epoch';
+        my $captures = join ', ', map { '$'.$_ }  @types;
+
         # generate base src
         local $" = ' ';
         my $parser_src = <<EOD;
-my (\$epoch, \$offset, \%%stash);
+my ($vars);
+\$offset = 0;
 sub {
-    if (\@stash{qw/@types/} = \$_[0] =~ m{\\A$format\\z}mo) {
+    if (($captures) = \$_[0] =~ m{\\A$format\\z}mo) {
         \%s;
         return (\$epoch, \$offset);
     }
@@ -215,13 +224,13 @@ sub _gen_stash_initialize_src {
 
     if ($type eq 'timezone') {
         return <<'EOD';
-local $ENV{TZ} = $stash{timezone};
+local $ENV{TZ} = $timezone;
 tzset();
 EOD
     }
     elsif ($type =~ /^localed_([a-z]+)$/) {
         return <<EOD;
-\$stash{${1}} = \$format_table->{localed_${1}}->{\$stash{localed_${1}}};
+\$${1} = \$format_table->{localed_${1}}->{\$localed_${1}};
 EOD
     }
     else {
@@ -236,33 +245,25 @@ sub _gen_calc_epoch_src {
 
     # hour24&minute&second
     # year&day365 or year&month&day
-    my $second        = $types_table->{second} ? '$stash{second}' : 0;
-    my $minute        = $types_table->{minute} ? '$stash{minute}' : 0;
+    my $second        = $types_table->{second} ? '$second' : 0;
+    my $minute        = $types_table->{minute} ? '$minute' : 0;
     my $hour          = $self->_gen_calc_hour_src($types_table);
     if ($types_table->{epoch}) {
-        $src .= <<'EOD';
-$epoch = $stash{epoch};
-EOD
+        # nothing to do
     }
     elsif ($types_table->{year} && $types_table->{month} && $types_table->{day}) {
         $src .= <<EOD;
-\$epoch = timegm_nocheck($second, $minute, $hour, \$stash{day}, \$stash{month} - 1, \$stash{year} - 1900);
+\$epoch = timegm_nocheck($second, $minute, $hour, \$day, \$month - 1, \$year - 1900);
 EOD
     }
     elsif ($types_table->{year} && $types_table->{day365}) {
         $src .= <<EOD;
-\$epoch = timegm_nocheck($second, $minute, $hour, 1, 0, \$stash{year} - 1900) + \$stash{day365} * 60 * 60 * 24;
+\$epoch = timegm_nocheck($second, $minute, $hour, 1, 0, \$year - 1900) + \$day365 * 60 * 60 * 24;
 EOD
     }
     else {
         die 'unknown case. types: '. join ', ', keys %$types_table;
     }
-
-    # stash value slice optimizetion
-    # e.g. ($stash{second}, $stash{minute}, $stash{hour24}, $stash{day}, => (@stash{qw!second minute hour24 day!},
-    my @keys;
-    push @keys => $1 while $src =~ /(?:[(,]\s*|\G)\$stash\{(\w+)\}(?=\s*[,)])/msgo;
-    $src =~ s/([(,]\s*)(?:\$stash\{\w+\}(\s*[,)]\s*)){2,}/${1}\@stash{qw!@keys!}$+/msgo if @keys >= 2;
 
     return $src;
 }
@@ -274,27 +275,29 @@ sub _gen_calc_offset_src {
 
     my $fixed_offset = $self->_fixed_offset($types_table, $ENV{TZ});
 
-    my $second = $types_table->{second} ? '$stash{second}' : 0;
-    my $minute = $types_table->{minute} ? '$stash{minute}' : 0;
+    my $second = $types_table->{second} ? '$second' : 0;
+    my $minute = $types_table->{minute} ? '$minute' : 0;
     my $hour   = $self->_gen_calc_hour_src($types_table);
     if (defined $fixed_offset) {
-        $src .= sprintf <<'EOD', $fixed_offset;
+        if ($fixed_offset != 0) {
+            $src .= sprintf <<'EOD', $fixed_offset;
 $offset = %d;
 EOD
+        }
     }
     elsif ($types_table->{offset}) {
         $src .= <<'EOD';
-$offset = (abs($stash{offset}) == $stash{offset} ? 1 : -1) * (60 * 60 * substr($stash{offset}, 1, 2) + 60 * substr($stash{offset}, 3, 2));
+$offset = (abs($offset) == $offset ? 1 : -1) * (60 * 60 * substr($offset, 1, 2) + 60 * substr($offset, 3, 2));
 EOD
     }
     elsif ($types_table->{year} && $types_table->{month} && $types_table->{day}) {
         $src .= <<EOD;
-\$offset = tzoffset_as_seconds($second, $minute, $hour, \$stash{day}, \$stash{month} - 1, \$stash{year} - 1900);
+\$offset = tzoffset_as_seconds($second, $minute, $hour, \$day, \$month - 1, \$year - 1900);
 EOD
     }
     elsif ($types_table->{year} && $types_table->{day365}) {
         $src .= <<EOD;
-\$offset = tzoffset_as_seconds($second, $minute, $hour, 1, 0, \$stash{year} - 1900);
+\$offset = tzoffset_as_seconds($second, $minute, $hour, 1, 0, \$year - 1900);
 EOD
     }
     else {
@@ -305,12 +308,6 @@ EOD
 $epoch -= $offset;
 EOD
 
-    # stash value slice optimizetion
-    # e.g. ($stash{second}, $stash{minute}, $stash{hour24}, $stash{day}, => (@stash{qw!second minute hour24 day!},
-    my @keys;
-    push @keys => $1 while $src =~ /(?:[(,]\s*|\G)\$stash\{(\w+)\}(?=\s*[,)])/msgo;
-    $src =~ s/([(,]\s*)(?:\$stash\{\w+\}(\s*[,)]\s*)){2,}/${1}\@stash{qw!@keys!}$+/msgo if @keys >= 2;
-
     return $src;
 }
 
@@ -318,11 +315,11 @@ sub _gen_calc_hour_src {
     my ($self, $types_table) = @_;
 
     if ($types_table->{hour24}) {
-        return '$stash{hour24}';
+        return '$hour24';
     }
     elsif ($types_table->{hour12} && $types_table->{ampm}) {
         return <<'EOD';
-($stash{hour12} == 12 ? (uc $stash{ampm} eq q{AM} ? 0 : 12) : ($stash{hour12} + (uc $stash{ampm} eq q{PM} ? 12 : 0)))
+($hour12 == 12 ? (uc $ampm eq q{AM} ? 0 : 12) : ($hour12 + (uc $ampm eq q{PM} ? 12 : 0)))
 EOD
     } else {
         return 0;
