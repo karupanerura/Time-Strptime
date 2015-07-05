@@ -1,6 +1,7 @@
 requires 'Encode';
 requires 'Encode::Locale';
 requires 'Locale::Scope';
+requires 'List::MoreUtils';
 requires 'Time::Local';
 requires 'parent';
 requires 'perl', '5.008005';

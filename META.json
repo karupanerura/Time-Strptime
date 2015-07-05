@@ -4,7 +4,7 @@
       "karupanerura <karupa@cpan.org>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Minilla/v2.3.0, CPAN::Meta::Converter version 2.143240",
+   "generated_by" : "Minilla/v2.4.1, CPAN::Meta::Converter version 2.150005",
    "license" : [
       "perl_5"
    ],
@@ -53,6 +53,7 @@
          "requires" : {
             "Encode" : "0",
             "Encode::Locale" : "0",
+            "List::MoreUtils" : "0",
             "Locale::Scope" : "0",
             "Time::Local" : "0",
             "parent" : "0",
@@ -78,5 +79,6 @@
       }
    },
    "version" : "0.01_1",
-   "x_authority" : "cpan:KARUPA"
+   "x_authority" : "cpan:KARUPA",
+   "x_serialization_backend" : "JSON::PP version 2.27300"
 }
