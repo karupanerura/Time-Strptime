@@ -158,13 +158,10 @@ sub _compile_format {
 my ($vars);
 \$offset = 0;
 sub {
-    if (($captures) = \$_[0] =~ m{\\A$format\\z}mo) {
-        \%s;
-        return (\$epoch, \$offset);
-    }
-    else {
-        Carp::croak 'cannot parse datetime. text: "'.\$_[0].'", format: '.\%s;
-    }
+    ($captures) = \$_[0] =~ m{\\A$format\\z}mo
+        or Carp::croak 'cannot parse datetime. text: "'.\$_[0].'", format: '.\%s;
+    \%s;
+    (\$epoch, \$offset);
 };
 EOD
 
@@ -176,7 +173,7 @@ EOD
         $formatter_src .= $self->_gen_calc_epoch_src(\%types_table);
         $formatter_src .= $self->_gen_calc_offset_src(\%types_table);
 
-        my $combined_src = sprintf $parser_src, $formatter_src, B::perlstring(B::perlstring($self->{format}));
+        my $combined_src = sprintf $parser_src, B::perlstring(B::perlstring($self->{format})), $formatter_src;
         $self->{parser_src} = $combined_src;
         # warn $combined_src;
 
