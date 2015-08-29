@@ -160,7 +160,7 @@ my ($vars);
 sub {
     ($captures) = \$_[0] =~ m{\\A$format\\z}mo
         or Carp::croak 'cannot parse datetime. text: "'.\$_[0].'", format: '.\%s;
-    \%s;
+\%s
     (\$epoch, \$offset);
 };
 EOD
@@ -222,13 +222,13 @@ sub _gen_stash_initialize_src {
 
     if ($type eq 'timezone') {
         return <<'EOD';
-local $ENV{TZ} = $timezone;
-tzset();
+    local $ENV{TZ} = $timezone;
+    tzset();
 EOD
     }
     elsif ($type =~ /^localed_([a-z]+)$/) {
         return <<EOD;
-\$${1} = \$format_table->{localed_${1}}->{\$localed_${1}};
+    \$${1} = \$format_table->{localed_${1}}->{\$localed_${1}};
 EOD
     }
     else {
@@ -251,12 +251,12 @@ sub _gen_calc_epoch_src {
     }
     elsif ($types_table->{year} && $types_table->{month} && $types_table->{day}) {
         $src .= <<EOD;
-\$epoch = timegm_nocheck($second, $minute, $hour, \$day, \$month - 1, \$year - 1900);
+    \$epoch = timegm_nocheck($second, $minute, $hour, \$day, \$month - 1, \$year - 1900);
 EOD
     }
     elsif ($types_table->{year} && $types_table->{day365}) {
         $src .= <<EOD;
-\$epoch = timegm_nocheck($second, $minute, $hour, 1, 0, \$year - 1900) + \$day365 * 60 * 60 * 24;
+    \$epoch = timegm_nocheck($second, $minute, $hour, 1, 0, \$year - 1900) + \$day365 * 60 * 60 * 24;
 EOD
     }
     else {
@@ -279,23 +279,23 @@ sub _gen_calc_offset_src {
     if (defined $fixed_offset) {
         if ($fixed_offset != 0) {
             $src .= sprintf <<'EOD', $fixed_offset;
-$offset = %d;
+    $offset -= %d;
 EOD
         }
     }
     elsif ($types_table->{offset}) {
         $src .= <<'EOD';
-$offset = (abs($offset) == $offset ? 1 : -1) * (60 * 60 * substr($offset, 1, 2) + 60 * substr($offset, 3, 2));
+    $offset = (abs($offset) == $offset ? 1 : -1) * (60 * 60 * substr($offset, 1, 2) + 60 * substr($offset, 3, 2));
 EOD
     }
     elsif ($types_table->{year} && $types_table->{month} && $types_table->{day}) {
         $src .= <<EOD;
-\$offset = tzoffset_as_seconds($second, $minute, $hour, \$day, \$month - 1, \$year - 1900);
+    \$offset = tzoffset_as_seconds($second, $minute, $hour, \$day, \$month - 1, \$year - 1900);
 EOD
     }
     elsif ($types_table->{year} && $types_table->{day365}) {
         $src .= <<EOD;
-\$offset = tzoffset_as_seconds($second, $minute, $hour, 1, 0, \$year - 1900);
+    \$offset = tzoffset_as_seconds($second, $minute, $hour, 1, 0, \$year - 1900);
 EOD
     }
     else {
@@ -303,7 +303,7 @@ EOD
     }
 
     $src .= <<'EOD' unless $types_table->{epoch} || defined $fixed_offset;
-$epoch -= $offset;
+    $epoch -= $offset;
 EOD
 
     return $src;
