@@ -1,19 +1,29 @@
 use strict;
 use warnings;
 use utf8;
+use feature qw/say/;
 
 use Benchmark qw/cmpthese timethese/;
 
+use Time::Strptime;
 use Time::Strptime::Format;
 use Time::Piece;
 use DateTime::Format::Strptime;
 use POSIX qw/tzset/;
 use Time::Local qw/timelocal/;
 use Time::TZOffset qw/tzoffset/;
+use Time::Moment;
+use POSIX::strptime;
 use Test::More;
 
 my $pattern = '%Y-%m-%d %H:%M:%S';
 my $text    = '2014-01-01 01:23:45';
+
+say "================ Perl5 info  ==============";
+system $^X, '-V';
+say "================ Module info ==============";
+say "$_:\t",$_->VERSION for qw/DateTime DateTime::TimeZone DateTime::Locale DateTime::Format::Strptime Time::Local Time::TZOffset Time::Moment Time::Piece Time::Strptime/;
+say "===========================================";
 
 for my $time_zone (qw|GMT UTC Asia/Tokyo America/Whitehorse|) {
     local $ENV{TZ} = $time_zone;
@@ -26,17 +36,23 @@ for my $time_zone (qw|GMT UTC Asia/Tokyo America/Whitehorse|) {
     subtest "${time_zone}(@{[ tzoffset(CORE::localtime) ]})" => sub {
         my $dt = $dt_parser->parse_datetime($text);
         my $tp = $tp_parser->strptime($text, $pattern);
-        is_deeply([$ts_parser->parse($text)], [$dt->epoch, $dt->offset]);
-        is_deeply([$ts_parser->parse($text)], [$tp->epoch, $tp->tzoffset->seconds]);
+        my $tm = Time::Moment->from_string($text.tzoffset(CORE::localtime), lenient => 1);
+        is_deeply(($ts_parser->parse($text))[0], timelocal(POSIX::strptime($text, $pattern)));
+        is_deeply([$ts_parser->parse($text)],    [$dt->epoch, $dt->offset]);
+        is_deeply([$ts_parser->parse($text)],    [$tp->epoch, $tp->tzoffset->seconds]);
+        is_deeply([$ts_parser->parse($text)],    [$tm->epoch, $tm->offset * 60]);
     };
 
-    cmpthese timethese 100000 => +{
+    my $tzoffset = tzoffset(CORE::localtime);
+    cmpthese timethese -10 => +{
         'dt(cached)' => sub { $dt_parser->parse_datetime($text) },
-        'ts(cached)' => sub { $ts_parser->parse($text)          },
+        'pt'         => sub { timelocal(POSIX::strptime($text, $pattern)) },
+        'ts(cached)' => sub { $ts_parser->parse($text) },
         'tp(cached)' => sub { $tp_parser->strptime($text, $pattern) },
         'dt'         => sub { DateTime::Format::Strptime->new(pattern => $pattern, time_zone => $time_zone)->parse_datetime($text) },
         'ts'         => sub { Time::Strptime::Format->new($pattern)->parse($text)                                                  },
         'tp'         => sub { Time::Piece->localtime->strptime($text, $pattern) },
+        'tm'         => sub { Time::Moment->from_string($text.$tzoffset, lenient => 1) },
     };
 }
 
