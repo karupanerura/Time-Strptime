@@ -2,6 +2,9 @@ Revision history for Perl extension Time-Strptime
 
 {{$NEXT}}
 
+    - micro performance optimization.
+    - fixed "%A", "%a" and "%C" format definition.
+
 0.01_1 2015-01-22T10:34:02Z
 
     - original version
