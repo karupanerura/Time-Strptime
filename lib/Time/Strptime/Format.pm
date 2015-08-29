@@ -158,7 +158,7 @@ sub _compile_format {
 my ($vars);
 \$offset = 0;
 sub {
-    ($captures) = \$_[0] =~ m{\\A$format\\z}mo
+    ($captures) = \$_[0] =~ m{^$format\$}
         or Carp::croak 'cannot parse datetime. text: "'.\$_[0].'", format: '.\%s;
 \%s
     (\$epoch, \$offset);
@@ -204,7 +204,7 @@ sub _assemble_format {
             my $prefix = quotemeta($1||'');
             my $suffix = quotemeta($3||'');
             $prefix.$self->_assemble_format($2, $types).$suffix
-        }geo;
+        }ge;
         return $val;
     }
     else {
