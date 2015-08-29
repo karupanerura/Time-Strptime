@@ -13,7 +13,7 @@ use Locale::Scope qw/locale_scope/;
 use List::MoreUtils qw/uniq/;
 use POSIX qw/tzset strftime LC_ALL/;
 
-our $VERSION = 0.01_1;
+our $VERSION = 0.02_01;
 
 BEGIN {
     local $@;
