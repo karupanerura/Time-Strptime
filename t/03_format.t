@@ -30,21 +30,21 @@ my %TEST_CASE = (
             result => [1388539425, 0],
         },
     ],
-    '[0-9] 2014-01-01 [a-z] 01:23:45 [A-Z]' => [
+    "[0-9]\t2014-01-01 [a-z] 01:23:45 [A-Z]" => [
         {
-            format => '[0-9] %Y-%m-%d [a-z] %H:%M:%S [A-Z]',
+            format => '[0-9]%t%Y-%m-%d [a-z] %H:%M:%S [A-Z]',
             result => [1388539425, 0],
         },
         {
-            format => '[0-9] %F [a-z] %H:%M:%S [A-Z]',
+            format => '[0-9]%t%F [a-z] %H:%M:%S [A-Z]',
             result => [1388539425, 0],
         },
         {
-            format => '[0-9] %Y-%m-%d [a-z] %T [A-Z]',
+            format => '[0-9]%t%Y-%m-%d [a-z] %T [A-Z]',
             result => [1388539425, 0],
         },
         {
-            format => '[0-9] %F [a-z] %T [A-Z]',
+            format => '[0-9]%t%F [a-z] %T [A-Z]',
             result => [1388539425, 0],
         },
     ],
