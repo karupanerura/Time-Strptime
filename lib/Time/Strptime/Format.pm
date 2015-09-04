@@ -15,7 +15,7 @@ use POSIX qw/tzset strftime LC_ALL/;
 
 use constant DEBUG => exists $ENV{PERL_TIME_STRPTIME_DEBUG} && $ENV{PERL_TIME_STRPTIME_DEBUG};
 
-our $VERSION = 0.02_01;
+our $VERSION = 0.03;
 
 BEGIN {
     local $@;

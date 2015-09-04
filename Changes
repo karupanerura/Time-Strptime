@@ -2,6 +2,11 @@ Revision history for Perl extension Time-Strptime
 
 {{$NEXT}}
 
+0.03 2015-09-04T14:58:46Z
+
+    - Fixed utf8 flag problem on perl 5.22
+    - Fixed regexp escape when charactor
+
 0.02_01 2015-08-29T06:47:42Z
 
     - micro performance optimization.
