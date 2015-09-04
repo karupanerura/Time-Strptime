@@ -7,7 +7,7 @@ use integer;
 use B;
 use Carp ();
 use Time::Local qw/timelocal_nocheck timegm_nocheck/;
-use Encode qw/decode/;
+use Encode qw/decode is_utf8/;
 use Encode::Locale;
 use Locale::Scope qw/locale_scope/;
 use List::MoreUtils qw/uniq/;
@@ -24,9 +24,9 @@ BEGIN {
 our %DEFAULT_HANDLER = (
     '%' => [char          => '%' ],
     A   => [SKIP          => sub {
-        map quotemeta, map { ($_, substr $_, 0, 3) } map { decode(locale => $_) } map {
+        map quotemeta, map { ($_, substr $_, 0, 3) } map { is_utf8($_) ? $_ : decode(locale => $_) } map {
             strftime('%a', 0, 0, 0, $_, 0, 0),
-                strftime('%A', 0, 0, 0, $_, 0, 0)
+            strftime('%A', 0, 0, 0, $_, 0, 0)
         } 1..7
     }],
     a   => [extend        => q{%A} ],
@@ -36,8 +36,10 @@ our %DEFAULT_HANDLER = (
         unless (exists $self->{format_table}{localed_month}) {
             my %format_table;
             for my $month (1..12) {
-                $format_table{decode(locale => strftime('%b', 0, 0, 0, 1, $month-1, 0))} = $month;
-                $format_table{decode(locale => strftime('%B', 0, 0, 0, 1, $month-1, 0))} = $month;
+                my $b = strftime('%b', 0, 0, 0, 1, $month-1, 0);
+                my $B = strftime('%B', 0, 0, 0, 1, $month-1, 0);
+                $format_table{is_utf8($b) ? $b : decode(locale => $b) } = $month;
+                $format_table{is_utf8($B) ? $B : decode(locale => $B) } = $month;
             }
             $format_table{substr($_, 0, 3)} = $format_table{$_} for keys %format_table;
             $self->{format_table}{localed_month} = \%format_table;

@@ -11,7 +11,7 @@ use Time::Piece;
 use DateTime::Format::Strptime;
 use POSIX qw/tzset/;
 use Time::Local qw/timelocal/;
-use Time::TZOffset qw/tzoffset/;
+use Time::TZOffset qw/tzoffset tzoffset_as_seconds/;
 use Time::Moment;
 use POSIX::strptime;
 use Test::More;
