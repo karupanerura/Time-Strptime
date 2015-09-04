@@ -13,6 +13,8 @@ use Locale::Scope qw/locale_scope/;
 use List::MoreUtils qw/uniq/;
 use POSIX qw/tzset strftime LC_ALL/;
 
+use constant DEBUG => exists $ENV{PERL_TIME_STRPTIME_DEBUG} && $ENV{PERL_TIME_STRPTIME_DEBUG};
+
 our $VERSION = 0.02_01;
 
 BEGIN {
@@ -177,7 +179,7 @@ EOD
 
         my $combined_src = sprintf $parser_src, B::perlstring(B::perlstring($self->{format})), $formatter_src;
         $self->{parser_src} = $combined_src;
-        # warn $combined_src;
+        warn Encode::encode_utf8 "[DEBUG] src: $combined_src" if DEBUG;
 
         my $format_table = $self->{format_table} || {};
         eval $combined_src; ## no critic
