@@ -117,7 +117,7 @@ sub new {
 
 sub parse {
     my $self = shift;
-    goto &{ $self->_parser };
+    goto $self->_parser;
 }
 
 sub _parser {
