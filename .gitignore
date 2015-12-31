@@ -12,6 +12,7 @@ nytprof.out
 nytprof/
 
 cover_db/
+/_build_params
 
 *.bak
 *.old
