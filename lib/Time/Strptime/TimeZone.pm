@@ -4,13 +4,14 @@ use warnings;
 use utf8;
 
 use DateTime::TimeZone;
+use Scalar::Util qw/blessed/;
 
 use constant UNIX_EPOCH => 62135683200;
 
 sub new {
     my ($class, $name) = @_;
     $name ||= 'local';
-    my $tz = DateTime::TimeZone->new(name => $name);
+    my $tz = blessed $name && $name->isa('DateTime::TimeZone') ? $name : DateTime::TimeZone->new(name => $name);
     return bless [$tz, 0] => $class;
 }
 
