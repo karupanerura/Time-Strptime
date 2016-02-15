@@ -2,6 +2,10 @@ Revision history for Perl extension Time-Strptime
 
 {{$NEXT}}
 
+0.05 2016-02-15T04:21:04Z
+
+    - allow to use for blessed DateTime::TimeZone
+
 0.04 2016-02-15T02:03:26Z
 
     - time zone suppoot by DateTime::TimeZone
