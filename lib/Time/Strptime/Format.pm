@@ -11,17 +11,12 @@ use Encode qw/decode is_utf8/;
 use Encode::Locale;
 use Locale::Scope qw/locale_scope/;
 use List::MoreUtils qw/uniq/;
-use POSIX qw/tzset strftime LC_ALL/;
+use POSIX qw/strftime LC_ALL/;
+use Time::Strptime::TimeZone;
 
 use constant DEBUG => exists $ENV{PERL_TIME_STRPTIME_DEBUG} && $ENV{PERL_TIME_STRPTIME_DEBUG};
 
 our $VERSION = 0.03;
-
-BEGIN {
-    local $@;
-    eval "use Time::TZOffset 0.04 qw/tzoffset_as_seconds/";
-    *tzoffset_as_seconds = sub { timegm_nocheck(@_) - timelocal_nocheck(@_) } if $@;
-}
 
 our %DEFAULT_HANDLER = (
     '%' => [char          => '%' ],
@@ -85,7 +80,7 @@ our %DEFAULT_HANDLER = (
     x   => ['UNSUPPORTED'],
     Y   => [year        => q{[0-9]{4}}],
     y   => ['UNSUPPORTED'],
-    Z   => [timezone    => ['[-A-Z]+', '[A-Z][a-z]+(?:/[A-Z][a-z]+)+']],
+    Z   => [timezone    => ['[-A-Z0-9]+', '[A-Z][a-z]+(?:/[A-Z][a-z]+)+']],
     z   => [offset      => q{[-+][0-9]{4}}],
 );
 
@@ -101,7 +96,7 @@ sub new {
 
     my $self = bless +{
         format    => $format,
-        time_zone => $options->{time_zone},
+        time_zone => Time::Strptime::TimeZone->new($options->{time_zone}),
         locale    => $options->{locale} || 'C',
         _handler  => +{
             %DEFAULT_HANDLER,
@@ -130,10 +125,9 @@ sub _compile_format {
     my $format = $self->{format};
 
     my $parser = do {
-        # setlocale and tzset
-        my $locale = locale_scope(LC_ALL, $self->{locale});
-        local $ENV{TZ} = $ENV{TZ} || $self->{time_zone} || strftime('%Z', localtime);
-        tzset();
+        # setlocale
+        my $locale    = locale_scope(LC_ALL, $self->{locale});
+        my $time_zone = $self->{time_zone};
 
         # assemble format to regexp
         my $handlers = join '', keys %{ $self->{_handler} };
@@ -184,7 +178,6 @@ EOD
         my $format_table = $self->{format_table} || {};
         eval $combined_src; ## no critic
     };
-    tzset();
     die $@ if $@;
 
     return $parser;
@@ -226,8 +219,7 @@ sub _gen_stash_initialize_src {
 
     if ($type eq 'timezone') {
         return <<'EOD';
-    local $ENV{TZ} = $timezone;
-    tzset();
+    $time_zone->set_timezone($timezone);
 EOD
     }
     elsif ($type =~ /^localed_([a-z]+)$/) {
@@ -255,12 +247,12 @@ sub _gen_calc_epoch_src {
     }
     elsif ($types_table->{year} && $types_table->{month} && $types_table->{day}) {
         $src .= <<EOD;
-    \$epoch = timegm_nocheck($second, $minute, $hour, \$day, \$month - 1, \$year - 1900);
+    \$epoch = timegm_nocheck($second, $minute, $hour, \$day, \$month - 1, \$year);
 EOD
     }
     elsif ($types_table->{year} && $types_table->{day365}) {
         $src .= <<EOD;
-    \$epoch = timegm_nocheck($second, $minute, $hour, 1, 0, \$year - 1900) + \$day365 * 60 * 60 * 24;
+    \$epoch = timegm_nocheck($second, $minute, $hour, 1, 0, \$year) + \$day365 * 60 * 60 * 24;
 EOD
     }
     else {
@@ -275,11 +267,11 @@ sub _gen_calc_offset_src {
 
     my $src = '';
 
-    my $fixed_offset = $self->_fixed_offset($types_table, $ENV{TZ});
-
     my $second = $types_table->{second} ? '$second' : 0;
     my $minute = $types_table->{minute} ? '$minute' : 0;
     my $hour   = $self->_gen_calc_hour_src($types_table);
+
+    my $fixed_offset = $self->_fixed_offset($types_table);
     if (defined $fixed_offset) {
         if ($fixed_offset != 0) {
             $src .= sprintf <<'EOD', $fixed_offset;
@@ -292,21 +284,13 @@ EOD
     $offset = (abs($offset) == $offset ? 1 : -1) * (60 * 60 * substr($offset, 1, 2) + 60 * substr($offset, 3, 2));
 EOD
     }
-    elsif ($types_table->{year} && $types_table->{month} && $types_table->{day}) {
-        $src .= <<EOD;
-    \$offset = tzoffset_as_seconds($second, $minute, $hour, \$day, \$month - 1, \$year - 1900);
-EOD
-    }
-    elsif ($types_table->{year} && $types_table->{day365}) {
-        $src .= <<EOD;
-    \$offset = tzoffset_as_seconds($second, $minute, $hour, 1, 0, \$year - 1900);
-EOD
-    }
     else {
-        die 'unknown case. types: '. join ', ', keys %$types_table;
+        $src .= <<EOD;
+    \$offset = \$time_zone->offset(\$epoch);
+EOD
     }
 
-    $src .= <<'EOD' unless $types_table->{epoch} || defined $fixed_offset;
+    $src .= <<'EOD' unless defined $fixed_offset;
     $epoch -= $offset;
 EOD
 
@@ -323,18 +307,18 @@ sub _gen_calc_hour_src {
         return <<'EOD';
 ($hour12 == 12 ? (uc $ampm eq q{AM} ? 0 : 12) : ($hour12 + (uc $ampm eq q{PM} ? 12 : 0)))
 EOD
-    } else {
+    }
+    else {
         return 0;
     }
 }
 
 sub _fixed_offset {
-    my ($self, $types_table, $time_zone) = @_;
+    my ($self, $types_table) = @_;
     return if $types_table->{offset};
     return if $types_table->{timezone};
-    return if not defined $time_zone;
-    return if not exists $FIXED_OFFSET{$time_zone};
-    return $FIXED_OFFSET{$time_zone};
+    return if not exists $FIXED_OFFSET{$self->{time_zone}->name};
+    return $FIXED_OFFSET{$self->{time_zone}->name};
 }
 
 1;
