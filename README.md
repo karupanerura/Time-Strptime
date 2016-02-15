@@ -95,4 +95,4 @@ it under the same terms as Perl itself.
 
 # AUTHOR
 
-karupanerura <karupa@cpan.org>
+karupanerura &lt;karupa@cpan.org>

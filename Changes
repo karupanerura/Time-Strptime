@@ -2,6 +2,10 @@ Revision history for Perl extension Time-Strptime
 
 {{$NEXT}}
 
+0.04 2016-02-15T02:03:26Z
+
+    - time zone suppoot by DateTime::TimeZone
+
 0.03 2015-09-04T14:58:46Z
 
     - Fixed utf8 flag problem on perl 5.22
