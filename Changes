@@ -2,6 +2,10 @@ Revision history for Perl extension Time-Strptime
 
 {{$NEXT}}
 
+0.06 2016-02-15T06:56:51Z
+
+    - allow to omit the day of month
+
 0.05 2016-02-15T04:21:04Z
 
     - allow to use for blessed DateTime::TimeZone
