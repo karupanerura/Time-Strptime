@@ -250,6 +250,11 @@ sub _gen_calc_epoch_src {
     \$epoch = timegm_nocheck($second, $minute, $hour, \$day, \$month - 1, \$year);
 EOD
     }
+    elsif ($types_table->{year} && $types_table->{month}) {
+        $src .= <<EOD;
+    \$epoch = timegm_nocheck($second, $minute, $hour, 1, \$month - 1, \$year);
+EOD
+    }
     elsif ($types_table->{year} && $types_table->{day365}) {
         $src .= <<EOD;
     \$epoch = timegm_nocheck($second, $minute, $hour, 1, 0, \$year) + \$day365 * 60 * 60 * 24;
