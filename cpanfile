@@ -1,17 +1,15 @@
+requires 'DateTime::TimeZone';
 requires 'Encode';
 requires 'Encode::Locale';
-requires 'Locale::Scope';
 requires 'List::MoreUtils';
+requires 'Locale::Scope';
+requires 'Scalar::Util';
 requires 'Time::Local';
 requires 'parent';
 requires 'perl', '5.008005';
 
-recommends 'Time::TZOffset', '0.04';
-
 on configure => sub {
-    requires 'CPAN::Meta';
-    requires 'CPAN::Meta::Prereqs';
-    requires 'Module::Build';
+    requires 'Module::Build::Tiny', '0.035';
 };
 
 on test => sub {
@@ -19,7 +17,11 @@ on test => sub {
 };
 
 on develop => sub {
+    requires 'DateTime::Format::Strptime';
+    requires 'Getopt::Long';
+    requires 'POSIX::strptime';
+    requires 'Time::Moment';
     requires 'Time::Piece';
     requires 'Time::TZOffset';
-    requires 'DateTime::Format::Strptime';
+    requires 'feature';
 };
