@@ -2,6 +2,10 @@ Revision history for Perl extension Time-Strptime
 
 {{$NEXT}}
 
+0.07 2016-02-16T01:23:55Z
+
+    - fixed dependency
+
 0.06 2016-02-15T06:56:51Z
 
     - allow to omit the day of month
