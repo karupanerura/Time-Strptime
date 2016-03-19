@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/karupanerura/Time-Strptime.svg?branch=master)](https://travis-ci.org/karupanerura/Time-Strptime) [![Coverage Status](http://codecov.io/github/karupanerura/Time-Strptime/coverage.svg?branch=master)](https://codecov.io/github/karupanerura/Time-Strptime?branch=master)
 # NAME
 
 Time::Strptime - parse date and time string.
