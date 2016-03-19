@@ -13,7 +13,6 @@ use DateTime::Locale;
 use List::MoreUtils qw/uniq/;
 use POSIX qw/strftime LC_ALL/;
 use Time::Strptime::TimeZone;
-use DateTime::Format::Strptime;
 
 use constant DEBUG => exists $ENV{PERL_TIME_STRPTIME_DEBUG} && $ENV{PERL_TIME_STRPTIME_DEBUG};
 
