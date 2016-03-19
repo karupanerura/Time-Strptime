@@ -300,9 +300,11 @@ EOD
 EOD
     }
 
-    $src .= <<'EOD' unless defined $fixed_offset;
+    if (!defined $fixed_offset && !$types_table->{epoch}) {
+        $src .= <<'EOD'
     $epoch -= $offset;
 EOD
+    }
 
     return $src;
 }
