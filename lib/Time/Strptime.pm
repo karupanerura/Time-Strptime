@@ -42,8 +42,6 @@ Time::Strptime - parse date and time string.
 
 =head1 DESCRIPTION
 
-B<THE SOFTWARE IS IT'S IN ALPHA QUALITY. IT MAY CHANGE THE API WITHOUT NOTICE.>
-
 Time::Strptime is pure perl date and time string parser.
 In other words, This is pure perl implementation a L<strptime(3)>.
 
@@ -94,23 +92,20 @@ L<Time::Moment> is very fast and useful! but, not support C<strptime>. and, requ
 
 =head2 How to specify a time zone?
 
-Set time zone to C<$ENV{TZ}> and call C<POSIX::tzset()>.
-NOTE: C<POSIX::tzset()> is not supported on C<cygwin> and C<MSWin32>.
-
-example:
-
-    use Time::Strptime qw/strptime/;
-    use POSIX qw/tzset/;
-
-    local $ENV{TZ} = 'Asia/Tokyo';
-    tzset();
-    my ($epoch, $offset) = strptime('%Y-%m-%d %H:%M:%S', '2014-01-01 00:00:00');
-
-And, This code is same as:
+Set time zone name or L<DateTime::TimeZone> object to C<time_zone> option.
 
     use Time::Strptime::Format;
 
     my $format = Time::Strptime::Format->new('%Y-%m-%d %H:%M:%S', { time_zone => 'Asia/Tokyo' });
+    my ($epoch, $offset) = $format->parse('2014-01-01 00:00:00');
+
+=head2 How to specify a locale?
+
+Set locale name object to C<locale> option.
+
+    use Time::Strptime::Format;
+
+    my $format = Time::Strptime::Format->new('%Y-%m-%d %H:%M:%S', { locale => 'ja_JP' });
     my ($epoch, $offset) = $format->parse('2014-01-01 00:00:00');
 
 =head1 LICENSE

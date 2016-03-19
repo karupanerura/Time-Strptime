@@ -16,8 +16,6 @@ Time::Strptime - parse date and time string.
 
 # DESCRIPTION
 
-**THE SOFTWARE IS IT'S IN ALPHA QUALITY. IT MAY CHANGE THE API WITHOUT NOTICE.**
-
 Time::Strptime is pure perl date and time string parser.
 In other words, This is pure perl implementation a [strptime(3)](http://man.he.net/man3/strptime).
 
@@ -68,23 +66,20 @@ This module is fast and not require XS. but, support epoch `strptime` only.
 
 ## How to specify a time zone?
 
-Set time zone to `$ENV{TZ}` and call `POSIX::tzset()`.
-NOTE: `POSIX::tzset()` is not supported on `cygwin` and `MSWin32`.
-
-example:
-
-    use Time::Strptime qw/strptime/;
-    use POSIX qw/tzset/;
-
-    local $ENV{TZ} = 'Asia/Tokyo';
-    tzset();
-    my ($epoch, $offset) = strptime('%Y-%m-%d %H:%M:%S', '2014-01-01 00:00:00');
-
-And, This code is same as:
+Set time zone name or [DateTime::TimeZone](https://metacpan.org/pod/DateTime::TimeZone) object to `time_zone` option.
 
     use Time::Strptime::Format;
 
     my $format = Time::Strptime::Format->new('%Y-%m-%d %H:%M:%S', { time_zone => 'Asia/Tokyo' });
+    my ($epoch, $offset) = $format->parse('2014-01-01 00:00:00');
+
+## How to specify a locale?
+
+Set locale name object to `locale` option.
+
+    use Time::Strptime::Format;
+
+    my $format = Time::Strptime::Format->new('%Y-%m-%d %H:%M:%S', { locale => 'ja_JP' });
     my ($epoch, $offset) = $format->parse('2014-01-01 00:00:00');
 
 # LICENSE

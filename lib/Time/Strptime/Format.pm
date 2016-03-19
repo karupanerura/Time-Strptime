@@ -13,6 +13,7 @@ use DateTime::Locale;
 use List::MoreUtils qw/uniq/;
 use POSIX qw/strftime LC_ALL/;
 use Time::Strptime::TimeZone;
+use DateTime::Format::Strptime;
 
 use constant DEBUG => exists $ENV{PERL_TIME_STRPTIME_DEBUG} && $ENV{PERL_TIME_STRPTIME_DEBUG};
 
@@ -351,9 +352,128 @@ Time::Strptime::Format - L<strptime(3)> format compiler and parser.
 
 =head1 DESCRIPTION
 
-B<THE SOFTWARE IS IT'S IN ALPHA QUALITY. IT MAY CHANGE THE API WITHOUT NOTICE.>
-
 This is L<Time::Strptime> engine.
+
+=head1 METHODS
+
+This class offers the following methods.
+
+=head2 Time::Strptime::Format->new($format, \%args)
+
+This methods creates a new format object. It accepts the following arguments:
+
+=over 4
+
+=item * time_zone
+
+The default time zone to use for objects returned from parsing.
+
+=item * locale
+
+The locale to use for objects returned from parsing.
+
+=back
+
+=head2 $strptime->parse($string)
+
+Given a string in the pattern specified in the constructor, this method will return the epoch and offset.
+If given a string that doesn't match the pattern, the formatter will throw the error.
+
+=head1 STRPTIME PATTERN TOKENS
+
+The following tokens are allowed in the pattern string for strptime:
+
+=over 4
+
+=item * %%
+
+The % character.
+
+=item * %a or %A
+
+The weekday name according to the current locale, in abbreviated form or the full name. (ignored)
+
+=item * %b or %B or %h
+
+The month name according to the current locale, in abbreviated form or the full name.
+
+=item * %d or %e
+
+The day of month (01-31). This will parse single digit numbers as well.
+
+=item * %D
+
+Equivalent to %m/%d/%y. (This is the American style date, very confusing to non-Americans, especially since %d/%m/%y is widely used in Europe. The ISO 8601 standard pattern is %F.)
+
+=item * %F
+
+Equivalent to %Y-%m-%d. (This is the ISO style date)
+
+=item * %H
+
+The hour (00-23). This will parse single digit numbers as well.
+
+=item * %I
+
+The hour on a 12-hour clock (1-12).
+
+=item * %j
+
+The day number in the year (1-366).
+
+=item * %m
+
+The month number (01-12). This will parse single digit numbers as well.
+
+=item * %M
+
+The minute (00-59). This will parse single digit numbers as well.
+
+=item * %n
+
+Arbitrary whitespace. (ignored)
+
+=item * %p
+
+The equivalent of AM or PM according to the locale in use. (See L<DateTime::Locale>)
+
+=item * %r
+
+Equivalent to %I:%M:%S %p.
+
+=item * %R
+
+Equivalent to %H:%M.
+
+=item * %s
+
+Number of seconds since the Epoch.
+
+=item * %S
+
+The second (0-60; 60 may occur for leap seconds.).
+
+=item * %t
+
+Tab space. (ignored)
+
+=item * %T
+
+Equivalent to %H:%M:%S.
+
+=item * %Y
+
+A 4-digit year, including century (for example, 1991).
+
+=item * %z
+
+An RFC-822/ISO 8601 standard time zone specification. (e.g. +1100)
+
+=item * %Z
+
+The timezone name. (e.g. EST)
+
+=back
 
 =head1 LICENSE
 
