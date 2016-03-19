@@ -23,7 +23,7 @@ our %DEFAULT_HANDLER = (
         my $self = shift;
         my $wide = $self->{locale}->day_format_wide;
         my $abbr = $self->{locale}->day_format_abbreviated;
-        return [map quotemeta, map { lc, uc, $_ } map { is_utf8 $_ ? $_ : decode(locale => $_) } map { $wide->[$_], $abbr->[$_] } 0..6];
+        return [map quotemeta, map { lc, uc, $_ } map { is_utf8($_) ? $_ : decode(locale => $_) } map { $wide->[$_], $abbr->[$_] } 0..6];
     }],
     a   => [extend        => q{%A} ],
     B   => [localed_month => sub {
