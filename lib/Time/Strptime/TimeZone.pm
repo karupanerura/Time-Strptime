@@ -8,9 +8,11 @@ use Scalar::Util qw/blessed/;
 
 use constant UNIX_EPOCH => 62135683200;
 
+our $DEFAULT = 'local';
+
 sub new {
     my ($class, $name) = @_;
-    $name ||= 'local';
+    $name ||= $DEFAULT;
     my $tz = blessed $name && $name->isa('DateTime::TimeZone') ? $name : DateTime::TimeZone->new(name => $name);
     return bless [$tz, 0] => $class;
 }
