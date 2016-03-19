@@ -78,7 +78,7 @@
          "web" : "https://github.com/karupanerura/Time-Strptime"
       }
    },
-   "version" : "1.00_01",
+   "version" : "1.00",
    "x_authority" : "cpan:KARUPA",
    "x_serialization_backend" : "JSON::PP version 2.27300"
 }
