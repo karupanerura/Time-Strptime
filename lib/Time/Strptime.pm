@@ -3,7 +3,7 @@ use 5.008005;
 use strict;
 use warnings;
 
-our $VERSION = "0.99";
+our $VERSION = "1.00_01";
 
 use parent qw/Exporter/;
 our @EXPORT_OK = qw/strptime/;
