@@ -84,6 +84,12 @@ my %TEST_CASE = (
             result => [1395320400, 0],
         },
     ],
+    "2014%079" => [
+        {
+            format => "%Y%%%j",
+            result => [1395273600, 0],
+        },
+    ],
 );
 
 for my $str (keys %TEST_CASE) {

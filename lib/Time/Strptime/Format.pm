@@ -19,7 +19,6 @@ use constant DEBUG => exists $ENV{PERL_TIME_STRPTIME_DEBUG} && $ENV{PERL_TIME_ST
 our $VERSION = 0.07;
 
 our %DEFAULT_HANDLER = (
-    '%' => [char          => '%' ],
     A   => [SKIP          => sub {
         my $self = shift;
         my $wide = $self->{locale}->day_format_wide;
@@ -58,9 +57,9 @@ our %DEFAULT_HANDLER = (
     G   => ['UNSUPPORTED'],
     g   => ['UNSUPPORTED'],
     H   => [hour24      => ['[01][0-9]','2[0-3]'] ],
-    h   => [extend      => q{%B}                     ],
+    h   => [extend      => q{%B}                  ],
     I   => [hour12      => ['0[1-9]', '1[0-2]'] ],
-    j   => [day365      => ['00[1-9]','[12][0-9][0-9]','3[0-5][0-9]','36[0-6]'] ],
+    j   => [day365      => ['00[1-9]', '0[1-9][0-9]', '[12][0-9][0-9]','3[0-5][0-9]','36[0-6]'] ],
     k   => [hour24      => ['[ 1][0-9]','2[0-3]'] ],
     l   => [hour12      => [' [1-9]', '1[0-2]'] ],
     M   => [minute      => q{[0-5][0-9]}          ],
@@ -247,36 +246,31 @@ EOD
 sub _gen_calc_epoch_src {
     my ($self, $types_table) = @_;
 
-    my $src = '';
-
     # hour24&minute&second
     # year&day365 or year&month&day
     my $second        = $types_table->{second} ? '$second' : 0;
     my $minute        = $types_table->{minute} ? '$minute' : 0;
     my $hour          = $self->_gen_calc_hour_src($types_table);
     if ($types_table->{epoch}) {
-        # nothing to do
+        return ''; # nothing to do
     }
     elsif ($types_table->{year} && $types_table->{month} && $types_table->{day}) {
-        $src .= <<EOD;
+        return <<EOD;
     \$epoch = timegm_nocheck($second, $minute, $hour, \$day, \$month - 1, \$year);
 EOD
     }
     elsif ($types_table->{year} && $types_table->{month}) {
-        $src .= <<EOD;
+        return <<EOD;
     \$epoch = timegm_nocheck($second, $minute, $hour, 1, \$month - 1, \$year);
 EOD
     }
     elsif ($types_table->{year} && $types_table->{day365}) {
-        $src .= <<EOD;
-    \$epoch = timegm_nocheck($second, $minute, $hour, 1, 0, \$year) + \$day365 * 60 * 60 * 24;
+        return <<EOD;
+    \$epoch = timegm_nocheck($second, $minute, $hour, 1, 0, \$year) + (\$day365 - 1) * 60 * 60 * 24;
 EOD
     }
-    else {
-        die 'unknown case. types: '. join ', ', keys %$types_table;
-    }
 
-    return $src;
+    die 'unknown case. types: '. join ', ', keys %$types_table;
 }
 
 sub _gen_calc_offset_src {
