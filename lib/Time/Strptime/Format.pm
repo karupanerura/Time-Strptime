@@ -216,7 +216,6 @@ sub _assemble_format {
         return $val;
     }
     else {
-        return ''             if $type eq 'TODO' and warn "SKIP(TODO): \%$c. patches welcome :)";
         return "(?:$val)"     if $type eq 'SKIP';
         return quotemeta $val if $type eq 'char';
 
