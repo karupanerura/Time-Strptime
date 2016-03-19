@@ -1,13 +1,5 @@
 use strict;
 
-BEGIN {
-    # Windows can't change timezone inside Perl script
-    if (($ENV{TZ}||'') ne 'GMT') {
-        $ENV{TZ} = 'GMT';
-        exec $^X, (map { "-I\"$_\"" } @INC), $0;
-    };
-}
-
 use Time::Strptime::Format;
 use Test::More;
 
@@ -68,13 +60,41 @@ my %TEST_CASE = (
             result => [1395273600, 0],
         },
     ],
+    "2014/03/20 AM12:00:00" => [
+        {
+            format => "%Y/%m/%d %p%I:%M:%S",
+            result => [1395273600, 0],
+        },
+    ],
+    "2014/03/20 AM01:00:00" => [
+        {
+            format => "%Y/%m/%d %p%I:%M:%S",
+            result => [1395277200, 0],
+        },
+    ],
+    "2014/03/20 PM12:00:00" => [
+        {
+            format => "%Y/%m/%d %p%I:%M:%S",
+            result => [1395316800, 0],
+        },
+    ],
+    "2014/03/20 PM01:00:00" => [
+        {
+            format => "%Y/%m/%d %p%I:%M:%S",
+            result => [1395320400, 0],
+        },
+    ],
 );
 
 for my $str (keys %TEST_CASE) {
     subtest "String: $str" => sub {
         for my $wanted (@{ $TEST_CASE{$str} }) {
-            my @result = Time::Strptime::Format->new($wanted->{format}, { locale => 'C' })->parse($str);
-            is_deeply \@result, $wanted->{result}, "Format: $wanted->{format}";
+            my @result = Time::Strptime::Format->new($wanted->{format}, {
+                time_zone => 'GMT',
+                locale    => 'C',
+            })->parse($str);
+            is_deeply \@result, $wanted->{result}, "Format: $wanted->{format}"
+                or diag "result: ".POSIX::strftime('%F %T', gmtime($result[0]));
         }
     };
 }

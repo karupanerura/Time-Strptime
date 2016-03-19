@@ -49,11 +49,11 @@
       },
       "runtime" : {
          "requires" : {
+            "DateTime::Locale" : "0",
             "DateTime::TimeZone" : "0",
             "Encode" : "0",
             "Encode::Locale" : "0",
             "List::MoreUtils" : "0",
-            "Locale::Scope" : "0",
             "Scalar::Util" : "0",
             "Time::Local" : "0",
             "parent" : "0",

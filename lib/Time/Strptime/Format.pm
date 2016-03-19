@@ -7,9 +7,9 @@ use integer;
 use B;
 use Carp ();
 use Time::Local qw/timelocal_nocheck timegm_nocheck/;
-use Encode qw/decode is_utf8/;
+use Encode qw/is_utf8 decode encode_utf8/;
 use Encode::Locale;
-use Locale::Scope qw/locale_scope/;
+use DateTime::Locale;
 use List::MoreUtils qw/uniq/;
 use POSIX qw/strftime LC_ALL/;
 use Time::Strptime::TimeZone;
@@ -21,10 +21,10 @@ our $VERSION = 0.07;
 our %DEFAULT_HANDLER = (
     '%' => [char          => '%' ],
     A   => [SKIP          => sub {
-        map quotemeta, map { ($_, substr $_, 0, 3) } map { is_utf8($_) ? $_ : decode(locale => $_) } map {
-            strftime('%a', 0, 0, 0, $_, 0, 0),
-            strftime('%A', 0, 0, 0, $_, 0, 0)
-        } 1..7
+        my $self = shift;
+        my $wide = $self->{locale}->day_format_wide;
+        my $abbr = $self->{locale}->day_format_abbreviated;
+        return [map quotemeta, map { lc, uc, $_ } map { is_utf8 $_ ? $_ : decode(locale => $_) } map { $wide->[$_], $abbr->[$_] } 0..6];
     }],
     a   => [extend        => q{%A} ],
     B   => [localed_month => sub {
@@ -32,13 +32,17 @@ our %DEFAULT_HANDLER = (
 
         unless (exists $self->{format_table}{localed_month}) {
             my %format_table;
-            for my $month (1..12) {
-                my $b = strftime('%b', 0, 0, 0, 1, $month-1, 0);
-                my $B = strftime('%B', 0, 0, 0, 1, $month-1, 0);
-                $format_table{is_utf8($b) ? $b : decode(locale => $b) } = $month;
-                $format_table{is_utf8($B) ? $B : decode(locale => $B) } = $month;
+
+            my $wide = $self->{locale}->month_format_wide;
+            my $abbr = $self->{locale}->month_format_abbreviated;
+            for my $month (0..11) {
+                for my $key ($wide->[$month], $abbr->[$month]) {
+                    $key = decode(locale => $key) unless is_utf8 $key;
+                    $format_table{$key}    = $month + 1;
+                    $format_table{lc $key} = $month + 1;
+                    $format_table{uc $key} = $month + 1;
+                }
             }
-            $format_table{substr($_, 0, 3)} = $format_table{$_} for keys %format_table;
             $self->{format_table}{localed_month} = \%format_table;
         }
 
@@ -51,10 +55,10 @@ our %DEFAULT_HANDLER = (
     d   => [day         => ['0[1-9]','[12][0-9]','3[01]'] ],
     e   => [day         => [' [1-9]','[12][0-9]','3[01]'] ],
     F   => [extend      => q{%Y-%m-%d} ],
-    G   => [year        => q{%Y} ], ## It's realy OK?
-    g   => [SKIP        => q{[0-9]{2}} ],
+    G   => ['UNSUPPORTED'],
+    g   => ['UNSUPPORTED'],
     H   => [hour24      => ['[01][0-9]','2[0-3]'] ],
-    h   => [extend      => q{%b}                     ],
+    h   => [extend      => q{%B}                     ],
     I   => [hour12      => ['0[1-9]', '1[0-2]'] ],
     j   => [day365      => ['00[1-9]','[12][0-9][0-9]','3[0-5][0-9]','36[0-6]'] ],
     k   => [hour24      => ['[ 1][0-9]','2[0-3]'] ],
@@ -62,8 +66,17 @@ our %DEFAULT_HANDLER = (
     M   => [minute      => q{[0-5][0-9]}          ],
     m   => [month       => ['0[1-9]','1[0-2]']    ],
     n   => [SKIP        => q{\s+}                 ],
-    p   => [ampm        => q{[AP]M}],
-    P   => [ampm        => q{[ap]m}],
+    p   => [localed_pm  => sub {
+        my $self = shift;
+        unless (exists $self->{format_table}{localed_pm}) {
+            for my $pm (0, 1) {
+                my $key = $self->{locale}->am_pm_abbreviated->[$pm];
+                $key = decode(locale => $key) unless is_utf8 $key;
+                $self->{format_table}{localed_pm}{$key} = $pm;
+            }
+        }
+        return [map quotemeta, keys %{ $self->{format_table}{localed_pm} }];
+    }],
     R   => [extend      => q{%H:%M}               ],
     r   => [extend      => q{%I:%M:%S %p}         ],
     S   => [second      => ['[0-5][0-9]','60']    ],
@@ -97,7 +110,7 @@ sub new {
     my $self = bless +{
         format    => $format,
         time_zone => Time::Strptime::TimeZone->new($options->{time_zone}),
-        locale    => $options->{locale} || 'C',
+        locale    => DateTime::Locale->load($options->{locale} || 'C'),
         _handler  => +{
             %DEFAULT_HANDLER,
             %{ $options->{handler} || {} },
@@ -126,7 +139,6 @@ sub _compile_format {
 
     my $parser = do {
         # setlocale
-        my $locale    = locale_scope(LC_ALL, $self->{locale});
         my $time_zone = $self->{time_zone};
 
         # assemble format to regexp
@@ -173,7 +185,7 @@ EOD
 
         my $combined_src = sprintf $parser_src, B::perlstring(B::perlstring($self->{format})), $formatter_src;
         $self->{parser_src} = $combined_src;
-        warn Encode::encode_utf8 "[DEBUG] src: $combined_src" if DEBUG;
+        warn encode_utf8 "[DEBUG] src: $combined_src" if DEBUG;
 
         my $format_table = $self->{format_table} || {};
         eval $combined_src; ## no critic
@@ -308,13 +320,11 @@ sub _gen_calc_hour_src {
     if ($types_table->{hour24}) {
         return '$hour24';
     }
-    elsif ($types_table->{hour12} && $types_table->{ampm}) {
-        return <<'EOD';
-($hour12 == 12 ? (uc $ampm eq q{AM} ? 0 : 12) : ($hour12 + (uc $ampm eq q{PM} ? 12 : 0)))
-EOD
+    elsif ($types_table->{hour12} && $types_table->{pm}) {
+        return '(0,12)[$pm] + ($hour12 % 12)';
     }
     else {
-        return 0;
+        return '0';
     }
 }
 
