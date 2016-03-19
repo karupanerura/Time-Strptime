@@ -335,8 +335,9 @@ sub _fixed_offset {
 1;
 __END__
 
-
 =encoding utf-8
+
+=for stopwords strptime
 
 =head1 NAME
 
@@ -431,7 +432,7 @@ The minute (00-59). This will parse single digit numbers as well.
 
 =item * %n
 
-Arbitrary whitespace. (ignored)
+Arbitrary white-space. (ignored)
 
 =item * %p
 
@@ -471,7 +472,7 @@ An RFC-822/ISO 8601 standard time zone specification. (e.g. +1100)
 
 =item * %Z
 
-The timezone name. (e.g. EST)
+The time zone name. (e.g. EST)
 
 =back
 
