@@ -17,7 +17,7 @@ use DateTime::Format::Strptime;
 
 use constant DEBUG => exists $ENV{PERL_TIME_STRPTIME_DEBUG} && $ENV{PERL_TIME_STRPTIME_DEBUG};
 
-our $VERSION = 0.07;
+our $VERSION = 0.99;
 
 our %DEFAULT_HANDLER = (
     A   => [SKIP          => sub {
