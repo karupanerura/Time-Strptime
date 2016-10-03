@@ -6,7 +6,7 @@ use integer;
 
 use B;
 use Carp ();
-use Time::Local qw/timelocal_nocheck timegm_nocheck/;
+use Time::Local qw/timegm timegm_nocheck/;
 use Encode qw/is_utf8 decode encode_utf8/;
 use Encode::Locale;
 use DateTime::Locale;
@@ -110,6 +110,7 @@ sub new {
         format    => $format,
         time_zone => Time::Strptime::TimeZone->new($options->{time_zone}),
         locale    => DateTime::Locale->load($options->{locale} || 'C'),
+        strict    => $options->{strict} || 0,
         _handler  => +{
             %DEFAULT_HANDLER,
             %{ $options->{handler} || {} },
@@ -245,6 +246,8 @@ EOD
 sub _gen_calc_epoch_src {
     my ($self, $types_table) = @_;
 
+    my $timegm = $self->{strict} ? 'timegm' : 'timegm_nocheck';
+
     # hour24&minute&second
     # year&day365 or year&month&day
     my $second        = $types_table->{second} ? '$second' : 0;
@@ -255,17 +258,17 @@ sub _gen_calc_epoch_src {
     }
     elsif ($types_table->{year} && $types_table->{month} && $types_table->{day}) {
         return <<EOD;
-    \$epoch = timegm_nocheck($second, $minute, $hour, \$day, \$month - 1, \$year);
+    \$epoch = $timegm($second, $minute, $hour, \$day, \$month - 1, \$year);
 EOD
     }
     elsif ($types_table->{year} && $types_table->{month}) {
         return <<EOD;
-    \$epoch = timegm_nocheck($second, $minute, $hour, 1, \$month - 1, \$year);
+    \$epoch = $timegm($second, $minute, $hour, 1, \$month - 1, \$year);
 EOD
     }
     elsif ($types_table->{year} && $types_table->{day365}) {
         return <<EOD;
-    \$epoch = timegm_nocheck($second, $minute, $hour, 1, 0, \$year) + (\$day365 - 1) * 60 * 60 * 24;
+    \$epoch = $timegm($second, $minute, $hour, 1, 0, \$year) + (\$day365 - 1) * 60 * 60 * 24;
 EOD
     }
 
@@ -371,6 +374,12 @@ The default time zone to use for objects returned from parsing.
 =item * locale
 
 The locale to use for objects returned from parsing.
+
+=item * strict
+
+Strict range check for date and time.
+
+Example. C<"2016-02-31"> is wrong date string, but Time::Strptime parses as C<2016-02-31> in default.
 
 =back
 
