@@ -7,8 +7,7 @@ use integer;
 use B;
 use Carp ();
 use Time::Local qw/timegm timegm_nocheck/;
-use Encode qw/is_utf8 decode encode_utf8/;
-use Encode::Locale;
+use Encode qw/encode_utf8/;
 use DateTime::Locale;
 use List::MoreUtils qw/uniq/;
 use POSIX qw/strftime LC_ALL/;
@@ -23,7 +22,7 @@ our %DEFAULT_HANDLER = (
         my $self = shift;
         my $wide = $self->{locale}->day_format_wide;
         my $abbr = $self->{locale}->day_format_abbreviated;
-        return [map quotemeta, map { lc, uc, $_ } map { is_utf8($_) ? $_ : decode(locale => $_) } map { $wide->[$_], $abbr->[$_] } 0..6];
+        return [map quotemeta, uniq map { lc, uc, $_ } map { $wide->[$_], $abbr->[$_] } 0..6];
     }],
     a   => [extend        => q{%A} ],
     B   => [localed_month => sub {
@@ -36,7 +35,6 @@ our %DEFAULT_HANDLER = (
             my $abbr = $self->{locale}->month_format_abbreviated;
             for my $month (0..11) {
                 for my $key ($wide->[$month], $abbr->[$month]) {
-                    $key = decode(locale => $key) unless is_utf8 $key;
                     $format_table{$key}    = $month + 1;
                     $format_table{lc $key} = $month + 1;
                     $format_table{uc $key} = $month + 1;
@@ -70,7 +68,6 @@ our %DEFAULT_HANDLER = (
         unless (exists $self->{format_table}{localed_pm}) {
             for my $pm (0, 1) {
                 my $key = $self->{locale}->am_pm_abbreviated->[$pm];
-                $key = decode(locale => $key) unless is_utf8 $key;
                 $self->{format_table}{localed_pm}{$key} = $pm;
             }
         }
