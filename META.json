@@ -77,7 +77,7 @@
          "web" : "https://github.com/karupanerura/Time-Strptime"
       }
    },
-   "version" : "1.01",
+   "version" : "1.02",
    "x_authority" : "cpan:KARUPA",
    "x_contributors" : [
       "Kenichi Ishigaki <ishigaki@cpan.org>"
