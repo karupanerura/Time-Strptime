@@ -88,7 +88,7 @@ benchmark:Asia/Tokyo(-0900) C<dt=DateTime, ts=Time::Strptime, tp=Time::Piece>
 This module is fast and not require XS. but, support epoch C<strptime> only.
 L<DateTime> is very useful and stable! but, It is slow.
 L<Time::Piece> is fast and useful! but, treatment of time zone is confusing. and, require XS.
-L<Time::Moment> is very fast and useful! but, not support C<strptime>. and, require XS.
+L<Time::Moment> is very fast and useful! but, does not support C<strptime>. and, require XS.
 
 =head2 How to specify a time zone?
 
