@@ -2,6 +2,11 @@ Revision history for Perl extension Time-Strptime
 
 {{$NEXT}}
 
+1.03 2018-07-03T15:12:15Z
+
+    - fixed tests on no DateTime.pm enviroments
+    - fixed docs
+
 1.02 2017-12-31T08:46:15Z
 
     - fixed parsing "Z" as zero offset time
