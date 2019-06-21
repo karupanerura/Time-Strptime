@@ -81,10 +81,11 @@ benchmark:Asia/Tokyo(-0900) C<tp=Time::Piece, ts=Time::Strptime, pt=POSIX::strpt
 
 =head2 What's the difference between this module and other modules?
 
-This module is fast and not require XS. but, support epoch C<strptime> only.
-L<DateTime> is very useful and stable! but, It is slow.
-L<Time::Piece> is fast and useful! but, treatment of time zone is confusing. and, require XS.
-L<Time::Moment> is very fast and useful! but, does not support C<strptime>. and, require XS.
+This module is fast and not require XS. but, it supports epoch C<strptime> only.
+L<DateTime> is very useful and stable! but, it is slow.
+L<Time::Piece> is fast and useful! but, treatment of time zone is confusing. and requires XS.
+L<POSIX::strptime> is fast and simple! but, it depend on system C library and requires XS.
+L<Time::Moment> is very fast and useful! but, does not support C<strptime>. and requires XS.
 
 =head2 How to specify a time zone?
 
