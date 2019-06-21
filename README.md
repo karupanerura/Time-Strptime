@@ -61,10 +61,11 @@ tm         2344312/s      5160%      4576%      1941%      1494%         --
 
 ## What's the difference between this module and other modules?
 
-This module is fast and not require XS. but, support epoch `strptime` only.
-[DateTime](https://metacpan.org/pod/DateTime) is very useful and stable! but, It is slow.
-[Time::Piece](https://metacpan.org/pod/Time::Piece) is fast and useful! but, treatment of time zone is confusing. and, require XS.
-[Time::Moment](https://metacpan.org/pod/Time::Moment) is very fast and useful! but, does not support `strptime`. and, require XS.
+This module is fast and not require XS. but, it supports epoch `strptime` only.
+[DateTime](https://metacpan.org/pod/DateTime) is very useful and stable! but, it is slow.
+[Time::Piece](https://metacpan.org/pod/Time::Piece) is fast and useful! but, treatment of time zone is confusing. and requires XS.
+[POSIX::strptime](https://metacpan.org/pod/POSIX::strptime) is fast and simple! but, it depend on system C library and requires XS.
+[Time::Moment](https://metacpan.org/pod/Time::Moment) is very fast and useful! but, does not support `strptime`. and requires XS.
 
 ## How to specify a time zone?
 
