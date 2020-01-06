@@ -6,7 +6,7 @@ use integer;
 
 use B;
 use Carp ();
-use Time::Local qw/timegm timegm_nocheck/;
+use Time::Local 1.27 qw/timegm/;
 use Encode qw/encode_utf8/;
 use DateTime::Locale;
 use List::MoreUtils qw/uniq/;
@@ -243,7 +243,10 @@ EOD
 sub _gen_calc_epoch_src {
     my ($self, $types_table) = @_;
 
-    my $timegm = $self->{strict} ? 'timegm' : 'timegm_nocheck';
+    my $pre_process = 'local $Time::Local::Options{no_year_munging} = 1;'."\n";
+    unless ($self->{strict}) {
+        $pre_process .= (' ' x 4).'local $Time::Local::Options{no_range_check} = 1;'."\n";
+    }
 
     # hour24&minute&second
     # year&day365 or year&month&day
@@ -255,17 +258,20 @@ sub _gen_calc_epoch_src {
     }
     elsif ($types_table->{year} && $types_table->{month} && $types_table->{day}) {
         return <<EOD;
-    \$epoch = $timegm($second, $minute, $hour, \$day, \$month - 1, \$year);
+    $pre_process
+    \$epoch = timegm($second, $minute, $hour, \$day, \$month - 1, \$year - 1900);
 EOD
     }
     elsif ($types_table->{year} && $types_table->{month}) {
         return <<EOD;
-    \$epoch = $timegm($second, $minute, $hour, 1, \$month - 1, \$year);
+    $pre_process
+    \$epoch = timegm($second, $minute, $hour, 1, \$month - 1, \$year - 1900);
 EOD
     }
     elsif ($types_table->{year} && $types_table->{day365}) {
         return <<EOD;
-    \$epoch = $timegm($second, $minute, $hour, 1, 0, \$year) + (\$day365 - 1) * 60 * 60 * 24;
+    $pre_process
+    \$epoch = timegm($second, $minute, $hour, 1, 0, \$year - 1900) + (\$day365 - 1) * 60 * 60 * 24;
 EOD
     }
 

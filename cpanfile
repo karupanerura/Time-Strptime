@@ -3,7 +3,7 @@ requires 'DateTime::TimeZone';
 requires 'Encode';
 requires 'List::MoreUtils';
 requires 'Scalar::Util';
-requires 'Time::Local';
+requires 'Time::Local', '1.27';
 requires 'parent';
 requires 'perl', '5.008005';
 
